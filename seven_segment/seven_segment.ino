@@ -19,7 +19,7 @@ Modify the code so as to configure which Arduino pin is connected
 to which segment.
 
 Note that the 7-segments usually have its pins labelled as follows:
-  A:7, B:6, C:4, D:2, E:1, F:9, 10: G, 5: DP,  ground: 3,8
+  A:7, B:6, C:4, D:2, E:1, F:9, 10: G, 5: DP,  ground: 3 or 8
 Don't forget to include resistors for protecting the segment LED.
 
 This code was adapted from:
@@ -34,7 +34,12 @@ http://www.hacktronics.com/Tutorials/arduino-and-7-segment-led.html
 int arduinoPinForSegmentInput[8] = 
      { 10, 12, 13, 0, 11, 6, 7, 4 };
   // { A, B, C, D, E, F, G, DP }
-  // { 2, 3, 4, 5, 6, 7, 8, 9 }
+  // a standard binding of the pins: { 2, 3, 4, 5, 6, 7, 8, 9 }
+
+// Define whether to work in cathode mode (HIGH is 'on')
+// or anode (LOW is 'on', HIGH is 'off')
+
+boolean isCathode = true;
 
 // Define digits to be displayed on the 7-segments.
 // Each row gives the state of: { A, B, C, D, E, F, G }
@@ -63,10 +68,11 @@ void segmentSetup() {
 
 // Write a state to a given segment pin: state = 0 or 1
 // -- do not call this function directly
-void segmentWrite(int pin, boolean state) { 
-  digitalWrite(pin, (state) ? HIGH : LOW);
-  // for an anode instead of a cathode, replace the above with:
-  // digitalWrite(pin, (state) ? LOW : HIGH);
+void segmentWrite(int pin, boolean state) {
+  if (isCathode)
+    digitalWrite(pin, (state) ? HIGH : LOW);
+  else
+    digitalWrite(pin, (state) ? LOW : HIGH);
 }
 
 // Clear all the segments, including the decimal point

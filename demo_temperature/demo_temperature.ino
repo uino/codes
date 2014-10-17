@@ -11,7 +11,6 @@
  */
 
 #include <SHT1x.h>
-#include <SPI.h> 
 
 // Specify data and clock connections and instantiate SHT1x object
 const int dataPin = 9;

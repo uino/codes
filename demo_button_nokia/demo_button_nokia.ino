@@ -10,21 +10,18 @@
 
 ACnokia5100x screen(3, 4, 5, 11, 13, 9);
 
-const int buttonPin = 1;
+const int buttonPin = 2;
 const long durationLong = 200; // milliseconds
 
 ACbuttonLong button(buttonPin, durationLong);
 
 void setup()
 {
-  screen.setup(); // This will setup our pins, and initialize the LCD
-  screen.updateDisplay(); // with displayMap untouched, blank screen
-  screen.setContrast(60); // Good values range from 40-60
-
-  // Serial.begin(9600);   
-  // Serial.println("Starting up");
-  screen.setString("coucou", 0, screen.LCD_HEIGHT-8, screen.BLACK);
-
+  screen.setup();
+  screen.updateDisplay(); 
+  screen.setContrast(60); 
+  screen.setString("coucou", screen.LCD_ROWS-1, 0, screen.BLACK);
+  delay(1200);
 }
 
 void loop()
@@ -34,9 +31,9 @@ void loop()
   screen.clearDisplay(screen.WHITE);
 
   if (button.isDown()) 
-    screen.setString("down", 0, screen.LCD_HEIGHT-8, screen.BLACK);
+    screen.setString("down", screen.LCD_ROWS-1, 0, screen.BLACK);
   else
-    screen.setString("up", 0, screen.LCD_HEIGHT-8, screen.BLACK);
+    screen.setString("up", screen.LCD_ROWS-1, 0, screen.BLACK);
 
   screen.updateDisplay();
 

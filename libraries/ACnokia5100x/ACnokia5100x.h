@@ -117,21 +117,35 @@ class ACnokia5100x
       * radius. The circle can be black or white. And have a line
       * thickness ranging from 1 to the radius of the circle.
       */
-    void setCircle (int x0, int y0, int radius, boolean st, int thickness);
+    void setCircle(int x0, int y0, int radius, boolean st, int thickness);
+
+    /** 
+      * This function will draw a char (defined in the ASCII table
+      * near the beginning of this sketch) at a defined row and col).
+      * The color can be either black (1) or white (0).
+      */
+    void setChar(char c, int row, int col, boolean st);
 
     /** 
       * This function will draw a char (defined in the ASCII table
       * near the beginning of this sketch) at a defined x and y).
       * The color can be either black (1) or white (0).
       */
-    void setChar(char c, int x, int y, boolean st);
+    void setCharXY(char c, int x, int y, boolean st);
 
     /** 
       * setString draws a string of characters, calling setChar with
       * progressive coordinates until it's done.
       * If at the end of a line, continue on the following one
       */
-    void setString(char* str, int x, int y, boolean st);
+    void setString(char* str, int row, int col, boolean st);
+
+    /** 
+      * setStringXY draws a string of characters, calling setChar with
+      * progressive coordinates until it's done.
+      * If at the end of a line, continue on the following one
+      */
+    void setStringXY(char* str, int x, int y, boolean st);
 
     /** 
       * This function will draw an array over the screen. The

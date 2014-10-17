@@ -283,7 +283,17 @@ void ACnokia5100x::setCircle (int x0, int y0, int radius, boolean bw, int lineTh
   }
 }
 
-void ACnokia5100x::setChar(char character, int x, int y, boolean bw)
+void ACnokia5100x::setChar(char character, int row, int col, boolean bw)
+{
+  setCharXY(character, col*6, row*8, bw);
+}
+
+void ACnokia5100x::setString(char* dString, int row, int col, boolean bw)
+{
+  setStringXY(dString, col*6, row*8, bw);
+}
+
+void ACnokia5100x::setCharXY(char character, int x, int y, boolean bw)
 {
   byte column; // temp byte to store character's column bitmap
   for (int i=0; i<5; i++) // 5 columns (x) per character
@@ -301,11 +311,11 @@ void ACnokia5100x::setChar(char character, int x, int y, boolean bw)
 
 // This function was grabbed from the SparkFun ColorLCDShield
 // library.
-void ACnokia5100x::setString(char* dString, int x, int y, boolean bw)
+void ACnokia5100x::setStringXY(char* dString, int x, int y, boolean bw)
 {
   while (*dString != 0x00) // loop until null terminator
   {
-    setChar(*dString++, x, y, bw);
+    setCharXY(*dString++, x, y, bw);
     x+=5;
     for (int i=y; i<y+8; i++)
     {

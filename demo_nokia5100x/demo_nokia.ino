@@ -102,7 +102,7 @@ void loop()
       cursorY = 0;
       break;
     default:
-      screen.setChar(c, cursorX, cursorY, screen.BLACK);
+      screen.setCharXY(c, cursorX, cursorY, screen.BLACK);
       screen.updateDisplay();
       cursorX += 6; // Increment cursor
       break;
@@ -128,7 +128,7 @@ void lcdFunTime()
   screen.clearDisplay(WHITE); // Begin by clearing the display
   randomSeed(analogRead(A0));
 
-  screen.setString("coucou", 0, LCD_HEIGHT-8, BLACK);
+  screen.setStringXY("coucou", 0, LCD_HEIGHT-8, BLACK);
   screen.updateDisplay();
   delay(1000);
 
@@ -258,10 +258,10 @@ void lcdFunTime()
   }
   delay(2000);
   
-  /* setChar & setString Example */
-  // setString takes 4 parameters: an array of characters to print,
+  /* setCharXY & setStringXY Example */
+  // setStringXY takes 4 parameters: an array of characters to print,
   // x and y coordinates for the top-left corner. And a color
-  screen.setString("Modern Art", 0, 10, WHITE);
+  screen.setStringXY("Modern Art", 0, 10, WHITE);
   screen.updateDisplay();
   delay(2000);
   

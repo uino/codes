@@ -89,11 +89,7 @@ class ACnokia5100
       * Set the state of a given pixel; true=Black and false=white
       */
     void setPixel(int x, int y, boolean st);
-
-    /** 
-      * setPixel(x, y) is the same as setPixel(x, y, BLACK)
-      */
-    void setPixel(int x, int y);
+    void setPixel(int x, int y);  // same with st=BLACK
 
     /** 
       * clearPixel(x, y) is the same as setPixel(x, y, WHITE)
@@ -124,6 +120,7 @@ class ACnokia5100
       * near the beginning of this sketch) at a defined row and col).
       * The color can be either black (1) or white (0).
       */
+    void setChar(char c, int row, int col); // same with st=BLACK
     void setChar(char c, int row, int col, boolean st);
 
     /** 
@@ -138,7 +135,10 @@ class ACnokia5100
       * progressive coordinates until it's done.
       * If at the end of a line, continue on the following one
       */
+    void setString(char* str, int row, int col); // same with st=BLACK
     void setString(char* str, int row, int col, boolean st);
+    void setString(String str, int row, int col); // same with st=BLACK
+    void setString(String str, int row, int col, boolean st);
 
     /** 
       * setStringXY draws a string of characters, calling setChar with
@@ -146,6 +146,7 @@ class ACnokia5100
       * If at the end of a line, continue on the following one
       */
     void setStringXY(char* str, int x, int y, boolean st);
+    void setStringXY(String str, int x, int y, boolean st);
 
     /** 
       * This function will draw an array over the screen. The

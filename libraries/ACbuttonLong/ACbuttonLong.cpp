@@ -14,11 +14,6 @@ ACbuttonLong::ACbuttonLong(int buttonPin)
   upAfterLongHandler = NULL;
 }
 
-ACbuttonLong::ACbuttonLong(int buttonPin, long longPeriodInMillis) : ACbuttonLong(buttonPin)
-{
-  setLongPeriodDuration(longPeriodInMillis);
-}
-
 void ACbuttonLong::setup() {
   pinMode(buttonPin, INPUT);
 }

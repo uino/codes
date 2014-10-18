@@ -288,9 +288,27 @@ void ACnokia5100::setChar(char character, int row, int col, boolean bw)
   setCharXY(character, col*6, row*8, bw);
 }
 
+void ACnokia5100::setChar(char character, int row, int col)
+{
+  setChar(character, row, col, BLACK);
+}
+
 void ACnokia5100::setString(char* dString, int row, int col, boolean bw)
 {
   setStringXY(dString, col*6, row*8, bw);
+}
+
+void ACnokia5100::setString(char* dString, int row, int col)
+{
+  setString(dString, row, col, BLACK);
+}
+
+void ACnokia5100::setString(String str, int row, int col) {
+  setString(str, row, col, BLACK);
+}
+
+void ACnokia5100::setString(String str, int row, int col, boolean bw) {
+  setStringXY(str, col*6, row*8, bw);
 }
 
 void ACnokia5100::setCharXY(char character, int x, int y, boolean bw)
@@ -316,6 +334,28 @@ void ACnokia5100::setStringXY(char* dString, int x, int y, boolean bw)
   while (*dString != 0x00) // loop until null terminator
   {
     setCharXY(*dString++, x, y, bw);
+    x+=5;
+    for (int i=y; i<y+8; i++)
+    {
+      setPixel(x, i, !bw);
+    }
+    x++;
+    if (x > (LCD_WIDTH - 5)) // Enables wrap around
+    {
+      x = 0;
+      y += 8;
+    }
+  }
+}
+
+// adapated from above
+void ACnokia5100::setStringXY(String str, int x, int y, boolean bw)
+{
+  int nb = str.length();
+  for (int k = 0; k < nb; k++) 
+  {
+    char c = str[k];
+    setCharXY(c, x, y, bw);
     x+=5;
     for (int i=y; i<y+8; i++)
     {

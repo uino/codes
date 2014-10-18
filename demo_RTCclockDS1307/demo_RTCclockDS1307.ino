@@ -20,13 +20,13 @@ void setup() {
 
 void loop() {
   clock.readClock();
-  int hour = clock.getHours();
-  int minute = clock.getMinutes();
-  int second = clock.getSeconds();
   int year = clock.getYear();
   int month = clock.getMonth();
   int dayOfMonth = clock.getDay();
   int dayOfWeek = clock.getDayOfWeek();
+  int hour = clock.getHours();
+  int minute = clock.getMinutes();
+  int second = clock.getSeconds();
 
   Serial.print(year, DEC);
   Serial.print("/");

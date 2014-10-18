@@ -18,8 +18,6 @@ class ACbuttonLong
 
     ACbuttonLong(int buttonPin);
 
-    ACbuttonLong(int buttonPin, long longPeriodInMillis);
-
     /** 
       * This function must be called to initialize the device.
       */

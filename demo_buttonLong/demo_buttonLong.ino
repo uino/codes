@@ -10,11 +10,12 @@
 const int buttonPin = 1;
 const long durationLong = 200; // milliseconds
 
-ACbuttonLong button(buttonPin, durationLong);
+ACbuttonLong button(buttonPin);
 
 void setup()
 {
   button.setup();
+  button.setLongPeriodDuration(durationLong);
 
   Serial.begin(9600);   
   Serial.println("Starting up");

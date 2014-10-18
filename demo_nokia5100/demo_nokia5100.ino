@@ -7,6 +7,7 @@
 
 #include <ACnokia5100.h>
 
+// ACnokia5100 pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin
 ACnokia5100 screen(3, 4, 5, 11, 13, 9);
 
 

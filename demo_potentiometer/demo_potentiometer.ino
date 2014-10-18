@@ -17,7 +17,7 @@
 int digitalPin = A0;
 
 void setup() {
-  pinMode(A0, INPUT);
+  pinMode(digitalPin, INPUT);
   Serial.begin(9600);
 }
 

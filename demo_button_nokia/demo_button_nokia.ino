@@ -1,7 +1,7 @@
 /**
  * Demo for the ACbuttonLong library.
- * Code by Arthur Charguéraud
- * Copyleft code.
+ * Code by Arthur Charguéraud.
+ * This code is in the public domain.
  */
 
 

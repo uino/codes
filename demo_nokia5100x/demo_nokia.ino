@@ -1,6 +1,6 @@
 /* 
  * Arthur Charguéraud
- * Copyleft code. 
+ * This code is in the public domain.
  *
  * Demo associated with library "ACnokia5100x".
  */

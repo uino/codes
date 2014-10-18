@@ -7,8 +7,6 @@
 
 #include <ACclock.h>
 
-const int buttonPin = 1;
-
 ACclock myclock;
 
 void setup()

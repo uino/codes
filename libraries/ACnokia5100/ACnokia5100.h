@@ -36,14 +36,14 @@
 */
 
 
-#ifndef ACnokia5100x_h
-#define ACnokia5100x_h
+#ifndef ACnokia5100_h
+#define ACnokia5100_h
 
 #include <Arduino.h>
 #include <SPI.h>
 
 
-class ACnokia5100x
+class ACnokia5100
 {
   public:
 
@@ -55,7 +55,7 @@ class ACnokia5100x
     static const int WHITE = 0;  // For drawing pixels. A 0 draws white.
     static const int BLACK = 1;  // A 1 draws black.
 
-    ACnokia5100x(int scePin, int rstPin, int dcPin, int sdinPin, int sclkPin, int blPin);
+    ACnokia5100(int scePin, int rstPin, int dcPin, int sdinPin, int sclkPin, int blPin);
 
     /** 
       * Must be called before using the screen

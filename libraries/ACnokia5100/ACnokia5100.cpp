@@ -1,13 +1,13 @@
 
 /**
- * ACnokia5100x Library -- see "ACnokia5100x.h" for information.
+ * ACnokia5100 Library -- see "ACnokia5100.h" for information.
  *
  */ 
 
-#include "ACnokia5100x.h"
+#include "ACnokia5100.h"
 
   
-const byte ACnokia5100x::ASCII[][5] = {
+const byte ACnokia5100::ASCII[][5] = {
       // First 32 characters (0x00-0x19) are ignored. These are
       // non-displayable, control characters.
        {0x00, 0x00, 0x00, 0x00, 0x00} // 0x20  
@@ -110,7 +110,7 @@ const byte ACnokia5100x::ASCII[][5] = {
     };
 
 
-ACnokia5100x::ACnokia5100x(int scePin, int rstPin, int dcPin,
+ACnokia5100::ACnokia5100(int scePin, int rstPin, int dcPin,
                            int sdinPin, int sclkPin, int blPin)
 {
   this->scePin = scePin;
@@ -121,17 +121,17 @@ ACnokia5100x::ACnokia5100x(int scePin, int rstPin, int dcPin,
   this->blPin = blPin;
 }
 
-void ACnokia5100x::setPixel(int x, int y)
+void ACnokia5100::setPixel(int x, int y)
 {
   setPixel(x, y, BLACK); 
 }
 
-void ACnokia5100x::clearPixel(int x, int y)
+void ACnokia5100::clearPixel(int x, int y)
 {
   setPixel(x, y, WHITE);
 }
 
-void ACnokia5100x::setPixel(int x, int y, boolean bw)
+void ACnokia5100::setPixel(int x, int y, boolean bw)
 {
   // First, double check that the coordinate is in range.
   if ((x >= 0) && (x < LCD_WIDTH) && (y >= 0) && (y < LCD_HEIGHT))
@@ -147,7 +147,7 @@ void ACnokia5100x::setPixel(int x, int y, boolean bw)
 
 // This function was grabbed from the SparkFun ColorLCDShield 
 // library.
-void ACnokia5100x::setLine(int x0, int y0, int x1, int y1, boolean bw)
+void ACnokia5100::setLine(int x0, int y0, int x1, int y1, boolean bw)
 {
   int dy = y1 - y0; // Difference between y0 and y1
   int dx = x1 - x0; // Difference between x0 and x1
@@ -207,7 +207,7 @@ void ACnokia5100x::setLine(int x0, int y0, int x1, int y1, boolean bw)
 
 // This function was grabbed from the SparkFun ColorLCDShield
 // library.
-void ACnokia5100x::setRect(int x0, int y0, int x1, int y1, boolean fill, boolean bw)
+void ACnokia5100::setRect(int x0, int y0, int x1, int y1, boolean fill, boolean bw)
 {
   // check if the rectangle is to be filled
   if (fill == 1)
@@ -243,7 +243,7 @@ void ACnokia5100x::setRect(int x0, int y0, int x1, int y1, boolean fill, boolean
 
 // This function was grabbed from the SparkFun ColorLCDShield 
 // library.
-void ACnokia5100x::setCircle (int x0, int y0, int radius, boolean bw, int lineThickness)
+void ACnokia5100::setCircle (int x0, int y0, int radius, boolean bw, int lineThickness)
 {
   for(int r = 0; r < lineThickness; r++)
   {
@@ -283,17 +283,17 @@ void ACnokia5100x::setCircle (int x0, int y0, int radius, boolean bw, int lineTh
   }
 }
 
-void ACnokia5100x::setChar(char character, int row, int col, boolean bw)
+void ACnokia5100::setChar(char character, int row, int col, boolean bw)
 {
   setCharXY(character, col*6, row*8, bw);
 }
 
-void ACnokia5100x::setString(char* dString, int row, int col, boolean bw)
+void ACnokia5100::setString(char* dString, int row, int col, boolean bw)
 {
   setStringXY(dString, col*6, row*8, bw);
 }
 
-void ACnokia5100x::setCharXY(char character, int x, int y, boolean bw)
+void ACnokia5100::setCharXY(char character, int x, int y, boolean bw)
 {
   byte column; // temp byte to store character's column bitmap
   for (int i=0; i<5; i++) // 5 columns (x) per character
@@ -311,7 +311,7 @@ void ACnokia5100x::setCharXY(char character, int x, int y, boolean bw)
 
 // This function was grabbed from the SparkFun ColorLCDShield
 // library.
-void ACnokia5100x::setStringXY(char* dString, int x, int y, boolean bw)
+void ACnokia5100::setStringXY(char* dString, int x, int y, boolean bw)
 {
   while (*dString != 0x00) // loop until null terminator
   {
@@ -330,13 +330,13 @@ void ACnokia5100x::setStringXY(char* dString, int x, int y, boolean bw)
   }
 }
 
-void ACnokia5100x::setBitmap(char* bitArray)
+void ACnokia5100::setBitmap(char* bitArray)
 {
   for (int i=0; i<(LCD_WIDTH * LCD_HEIGHT / 8); i++)
     displayMap[i] = bitArray[i];
 }
 
-void ACnokia5100x::clearDisplay(boolean bw)
+void ACnokia5100::clearDisplay(boolean bw)
 {
   for (int i=0; i<(LCD_WIDTH * LCD_HEIGHT / 8); i++)
   {
@@ -347,13 +347,13 @@ void ACnokia5100x::clearDisplay(boolean bw)
   }
 }
 
-void ACnokia5100x::gotoXY(int x, int y)
+void ACnokia5100::gotoXY(int x, int y)
 {
   writeCmd(0, 0x80 | x);  // Column.
   writeCmd(0, 0x40 | y);  // Row.  ?
 }
 
-void ACnokia5100x::updateDisplay()
+void ACnokia5100::updateDisplay()
 {
   gotoXY(0, 0);
   for (int i=0; i < (LCD_WIDTH * LCD_HEIGHT / 8); i++)
@@ -363,14 +363,14 @@ void ACnokia5100x::updateDisplay()
 }
 
 
-void ACnokia5100x::setContrast(byte contrast)
+void ACnokia5100::setContrast(byte contrast)
 {  
   writeCmd(LCD_COMMAND, 0x21); //Tell LCD that extended commands follow
   writeCmd(LCD_COMMAND, 0x80 | contrast); //Set LCD Vop (Contrast): Try 0xB1(good @ 3.3V) or 0xBF if your display is too dark
   writeCmd(LCD_COMMAND, 0x20); //Set display mode
 }
 
-void ACnokia5100x::invertDisplay()
+void ACnokia5100::invertDisplay()
 {
   /* There are two ways to do this. Either through direct commands
   to the display, or by swapping each bit in the displayMap array.
@@ -393,7 +393,7 @@ void ACnokia5100x::invertDisplay()
 // There are two memory banks in the LCD, data/RAM and commands.
 // This function sets the DC pin high or low depending, and then 
 // sends the data byte
-void ACnokia5100x::writeCmd(byte data_or_command, byte data) 
+void ACnokia5100::writeCmd(byte data_or_command, byte data) 
 {
   //Tell the LCD that we are writing either to data or a command
   digitalWrite(dcPin, data_or_command); 
@@ -405,7 +405,7 @@ void ACnokia5100x::writeCmd(byte data_or_command, byte data)
 }
 
 //This sends the magical commands to the PCD8544
-void ACnokia5100x::setup(void) 
+void ACnokia5100::setup(void) 
 {
   //Configure control pins
   pinMode(scePin, OUTPUT);

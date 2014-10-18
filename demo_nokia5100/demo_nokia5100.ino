@@ -2,12 +2,12 @@
  * Arthur Charguéraud
  * This code is in the public domain.
  *
- * Demo associated with library "ACnokia5100x".
+ * Demo associated with library "ACnokia5100".
  */
 
-#include <ACnokia5100x.h>
+#include <ACnokia5100.h>
 
-ACnokia5100x screen(3, 4, 5, 11, 13, 9);
+ACnokia5100 screen(3, 4, 5, 11, 13, 9);
 
 
 void lcdFunTime();
@@ -53,10 +53,10 @@ char xkcdSandwich[504] = {
 };
 
 
-const int WHITE = ACnokia5100x::WHITE;
-const int BLACK = ACnokia5100x::BLACK;
-const int LCD_WIDTH = ACnokia5100x::LCD_WIDTH;
-const int LCD_HEIGHT = ACnokia5100x::LCD_HEIGHT;
+const int WHITE = ACnokia5100::WHITE;
+const int BLACK = ACnokia5100::BLACK;
+const int LCD_WIDTH = ACnokia5100::LCD_WIDTH;
+const int LCD_HEIGHT = ACnokia5100::LCD_HEIGHT;
 
 void setup()
 {

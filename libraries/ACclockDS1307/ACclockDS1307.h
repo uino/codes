@@ -1,11 +1,11 @@
 /**
- * ACclock library.
+ * ACclockDS1307 library.
  * Code by Arthur Charguéraud
  * Copyleft code.
  */
 
-#ifndef ACclock_h
-#define ACclock_h
+#ifndef ACclockDS1307_h
+#define ACclockDS1307_h
 
 #include <Arduino.h>
 #include "Wire.h"
@@ -19,13 +19,13 @@ typedef struct {
   byte dayOfWeek;
   byte dayOfMonth;
   byte month;
-  byte year; } ACclock_str;
+  byte year; } ACclockDS1307_str;
 
-class ACclock
+class ACclockDS1307
 {
   public:
 
-    ACclock();
+    ACclockDS1307();
 
     /** 
       * This function must be called to initialize the device.
@@ -47,7 +47,7 @@ class ACclock
         byte month,         // 1-12
         byte year);         // 0-99
 
-    void setDate(ACclock_str date); 
+    void setDate(ACclockDS1307_str date); 
 
     /** 
       * Configure the threshold delay for clicks considered long,
@@ -62,7 +62,7 @@ class ACclock
         byte *month,
         byte *year);
 
-    void getDate(ACclock_str* date); 
+    void getDate(ACclockDS1307_str* date); 
 
   private:
     const int DS1307_I2C_ADDRESS = 0x68;

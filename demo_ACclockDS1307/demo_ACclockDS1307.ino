@@ -5,9 +5,9 @@
  */
 
 
-#include <ACclock.h>
+#include <ACclockDS1307.h>
 
-ACclock myclock;
+ACclockDS1307 myclock;
 
 void setup()
 {

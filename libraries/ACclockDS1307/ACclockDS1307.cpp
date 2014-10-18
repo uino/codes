@@ -1,30 +1,30 @@
 /**
- * ACclock Library. See "ACclock.h" for information.
+ * ACclockDS1307 Library. See "ACclockDS1307.h" for information.
  */
 
-#include "ACclock.h"
+#include "ACclockDS1307.h"
 
-ACclock::ACclock()
+ACclockDS1307::ACclockDS1307()
 {
 }
 
-void ACclock::setup() {
+void ACclockDS1307::setup() {
   Wire.begin();
 }
 
 // Convert normal decimal numbers to binary coded decimal
-byte ACclock::decToBcd(byte val)
+byte ACclockDS1307::decToBcd(byte val)
 {
   return ( (val/10*16) + (val%10) );
 }
 
 // Convert binary coded decimal to normal decimal numbers
-byte ACclock::bcdToDec(byte val)
+byte ACclockDS1307::bcdToDec(byte val)
 {
   return ( (val/16*10) + (val%16) );
 }
 
-void ACclock::setDate(
+void ACclockDS1307::setDate(
     byte second,        // 0-59
     byte minute,        // 0-59
     byte hour,          // 1-23
@@ -46,7 +46,7 @@ void ACclock::setDate(
    Wire.endTransmission();
 }
 
-void ACclock::setDate(ACclock_str date) {
+void ACclockDS1307::setDate(ACclockDS1307_str date) {
   setDate(date.second,
     date.minute,
     date.hour,
@@ -56,7 +56,7 @@ void ACclock::setDate(ACclock_str date) {
     date.year);
 }
 
-void ACclock::getDate(
+void ACclockDS1307::getDate(
     byte *second,
     byte *minute,
     byte *hour,
@@ -82,7 +82,7 @@ void ACclock::getDate(
   *year       = bcdToDec(Wire.read());
 }
 
-void ACclock::getDate(ACclock_str* date) {
+void ACclockDS1307::getDate(ACclockDS1307_str* date) {
   getDate(&(date->second),
     &(date->minute),
     &(date->hour),

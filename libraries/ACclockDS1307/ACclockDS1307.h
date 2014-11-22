@@ -1,6 +1,6 @@
 /**
  * ACclockDS1307 library.
- * Code by Arthur Charguéraud
+ * Code by Arthur Chargueraud
  * Copyleft code.
  */
 

@@ -1,6 +1,6 @@
 /**
  * Demo for the SD card data logging.
- * Code by Arthur Charguéraud.
+ * Code by Arthur Chargueraud.
  * This code is in the public domain.
  *  
  *

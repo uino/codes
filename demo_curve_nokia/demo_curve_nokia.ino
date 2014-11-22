@@ -1,6 +1,6 @@
 /**
  * Demo for the ACbuttonLong library.
- * Code by Arthur Charguéraud.
+ * Code by Arthur Chargueraud.
  * This code is in the public domain.
  * 
  * Show in real time the state of a button on a Nokia5100 display.

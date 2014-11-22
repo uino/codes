@@ -1,7 +1,7 @@
 /**
    Nokia 5100 LCD Library
 
-   Adapted by Arthur Charguéraud from code by!
+   Adapted by Arthur Chargueraud from code by!
 
    ---
      Graphics driver and PCD8544 interface code for SparkFun's

@@ -1,5 +1,5 @@
 /* 
- * Arthur Charguéraud
+ * Arthur Chargueraud
  * This code is in the public domain.
  *
  * Demo associated with library "ACnokia5100".

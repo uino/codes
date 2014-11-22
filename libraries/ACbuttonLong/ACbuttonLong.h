@@ -1,6 +1,6 @@
 /**
  * ACbuttonLong library.
- * Code by Arthur Charguéraud
+ * Code by Arthur Chargueraud
  * Copyleft code.
  */
 

@@ -1,7 +1,7 @@
 /*
  * Demo for reading value on a analog input and 
  * reporting values to the serial port.
- * Code by Arthur Charguéraud.
+ * Code by Arthur Chargueraud.
  * This example code is in the public domain.
  * 
  *

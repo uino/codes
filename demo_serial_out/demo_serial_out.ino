@@ -1,6 +1,6 @@
 /*
  * Demo for printing values to the serial port.
- * Code by Arthur Chargu�raud.
+ * Code by Arthur Chargueraud.
  * This example code is in the public domain.
  */
 

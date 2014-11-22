@@ -1,6 +1,6 @@
 /*
  * Demo for printing values to the serial port.
- * Code by Arthur Charguéraud.
+ * Code by Arthur Charguï¿½raud.
  * This example code is in the public domain.
  */
 
@@ -13,4 +13,5 @@ int counter = 0;
 void loop() {
   Serial.println(counter);
   delay(200);
+  counter ++;
 }

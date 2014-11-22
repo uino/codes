@@ -6,7 +6,6 @@
 
 #include <DS3232RTC.h> 
 #include <Time.h>
-#include <Wire.h>  
 
 DS3232RTC ds3232;
 
@@ -47,17 +46,17 @@ void setup()
   // set a given time into the ds3232
   initializeTime();
   
-  int example = 1;
+  int example = 2;
   if (example == 0) { 
     // alarm every seconds
     ds3232.setAlarm(ALM1_EVERY_SECOND, 0, 0, 0, 0);  
   } else if (example == 1) {
-    // alarm once per minute 5 seconds after start
-    ds3232.setAlarm(ALM1_MATCH_SECONDS, initTime.Second+5, 0, 0, 0);  
+    // alarm once per minute when seconds are equal to 14
+    ds3232.setAlarm(ALM1_MATCH_SECONDS, 14, 0, 0, 0);  
   } else if (example == 2) {
-    // alarm once per minute 5 seconds after start, with interrupt
+    // alarm once per minute when seconds are equal to 14, with interrupt
     ds3232.alarmInterrupt(ALARM_1, true); 
-    ds3232.setAlarm(ALM1_MATCH_SECONDS, initTime.Second+5, 0, 0, 0);  
+    ds3232.setAlarm(ALM1_MATCH_SECONDS, 14, 0, 0, 0);  
   }
   // initialize wave output
   // ds3232.squareWave(SQWAVE_1_HZ);

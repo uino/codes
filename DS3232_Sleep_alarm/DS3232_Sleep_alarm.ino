@@ -8,6 +8,18 @@
 #include <Time.h>
 #include<Wire.h>
 
+#include <avr/sleep.h>
+const byte LED = 6;
+void wake ()
+{
+  // cancel sleep as a precaution
+  sleep_disable();
+  // must do this as the pin will probably stay low for a while
+  detachInterrupt (0);
+}  // end of wake
+
+  
+
 DS3232RTC ds3232;
 
 tmElements_t initTime;
@@ -41,6 +53,10 @@ void printTime(time_t t) {
 
 void setup()
 {
+  digitalWrite (2, HIGH);
+  pinMode(6, OUTPUT);      //led de puissance et alim horloge
+  digitalWrite(6, HIGH);
+  
   Serial.begin(9600);   
   Serial.println("Starting up");
 
@@ -64,14 +80,56 @@ void setup()
 }
 
 
+
 void loop(void)
 {
+  
+  pinMode (LED, OUTPUT);
+ digitalWrite(6, HIGH);
+ 
   Serial.print("Date: ");
   printTime(ds3232.get());
 
   if (ds3232.alarm(ALARM_1)) {
     Serial.println("Alarm 1 triggered");
   }
-
+ 
   delay(300);
+  Serial.print("Date: ");
+  printTime(ds3232.get());
+
+     
+ delay(300);
+
+
+ digitalWrite(6, LOW);
+  pinMode (LED, INPUT);
+  
+  // disable ADC
+  ADCSRA = 0;  
+  
+  set_sleep_mode (SLEEP_MODE_PWR_DOWN);  
+  sleep_enable();
+
+  // Do not interrupt before we go to sleep, or the
+  // ISR will detach interrupts and we won't wake.
+  noInterrupts ();
+  
+  // will be called when pin D2 goes low  
+  attachInterrupt (0, wake, LOW);
+ 
+  // turn off brown-out enable in software
+  // BODS must be set to one and BODSE must be set to zero within four clock cycles
+  MCUCR = bit (BODS) | bit (BODSE);
+  // The BODS bit is automatically cleared after three clock cycles
+  MCUCR = bit (BODS); 
+  
+  // We are guaranteed that the sleep_cpu call will be done
+  // as the processor executes the next instruction after
+  // interrupts are turned on.
+  interrupts ();  // one cycle
+  sleep_cpu ();   // one cycle
+
+
+
 }

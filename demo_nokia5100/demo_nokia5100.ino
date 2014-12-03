@@ -7,9 +7,9 @@
 
 #include <ACnokia5100.h>
 
-// ACnokia5100 pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin
-ACnokia5100 screen(3, 4, 5, 11, 13, 9);
-
+// ACnokia5100 pins: scePin(3), rstPin(4), dcPin(5), sdinPin(6), sclkPin, blPin
+//ACnokia5100 screen(3, 4, 5, 11, 13, 9);
+ACnokia5100 screen(3, 4, 5, 6, 7, 0);
 
 void lcdFunTime();
 

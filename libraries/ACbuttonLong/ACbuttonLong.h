@@ -81,6 +81,7 @@ class ACbuttonLong
     eventHandler downHandler;
     eventHandler upHandler;
     eventHandler upAfterLongHandler;
+    void debug(String msg);
 };
 
 #endif

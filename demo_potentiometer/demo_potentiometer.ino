@@ -14,15 +14,15 @@
  * Values are between 0 and 1023 inclusive.
  */
 
-int digitalPin = A0;
+int potentiometerPin = A0;
 
 void setup() {
-  pinMode(digitalPin, INPUT);
+  pinMode(potentiometerPin, INPUT);
   Serial.begin(9600);
 }
 
 void loop() {
-  int sensorValue = analogRead(digitalPin);    
+  int sensorValue = analogRead(potentiometerPin);    
   Serial.println(sensorValue);
   delay(100);
 }

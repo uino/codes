@@ -18,23 +18,26 @@ void ACbuttonLong::setup() {
   pinMode(buttonPin, INPUT);
 }
 
+void ACbuttonLong::debug(String msg) {
+  if (false)
+    Serial.println(msg);
+}
+
 void ACbuttonLong::poll() {
   byte st = digitalRead(buttonPin);
   if (st == LOW) {
-      Serial.println("low");
+    debug("low");
     if (dateLastDown == NEVER) {
-       Serial.println("high to low");
-      // transition from HIGH to LOW
+      debug("high to low");
       dateLastDown = millis();
       if (downHandler != NULL) {
         downHandler();
       }
     } 
   } else { // (st == HIGH)
-      Serial.println("high");
+    debug("high");
     if (dateLastDown != NEVER) {
-      Serial.println("low to high");
-     // transition from LOW to HIGH
+      debug("low to high");
       long duration = millis() - dateLastDown;
       dateLastDown = NEVER;
       if (upAfterLongHandler != NULL 

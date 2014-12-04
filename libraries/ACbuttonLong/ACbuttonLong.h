@@ -2,6 +2,15 @@
  * ACbuttonLong library.
  * Code by Arthur Chargueraud
  * Copyleft code.
+ *
+ * This library can be used to control a button and make
+ * the distinction between short and long click, for a 
+ * specified threshold on the duration of the click.
+ *
+ * The library can either be queried explicitly for state,
+ * or one can attach a callback function to handle events,
+ * and call a polling function on a regular basis.
+ *
  */
 
 #ifndef ACbuttonLong_h
@@ -16,24 +25,27 @@ class ACbuttonLong
   public:
     const int NEVER = -1;
 
-    ACbuttonLong(int buttonPin);
+    /** 
+      * Construct a new buttonLong device given the pin of the button
+      */
+    ACbuttonLong(int inputPin);
 
     /** 
-      * This function must be called to initialize the device.
+      * To be called from the main setup before the device can be used.
       */
     void setup();
-
-    /** 
-      * This function must be called very frequently for checking
-      * activity on the button
-      */
-    void poll();
 
     /** 
       * Configure the threshold delay for clicks considered long,
       * to be expressed in milliseconds. Default value is 200ms.
       */
     void setLongPeriodDuration(long longPeriodInMillis);
+
+    /** 
+      * This function must be called very frequently for checking
+      * activity on the button
+      */
+    void poll();
 
     /** 
       * Returns whether the button is currently down
@@ -75,7 +87,7 @@ class ACbuttonLong
      void onUpAfterLong(eventHandler handler);
 
   private:
-    int buttonPin;
+    int inputPin;
     int longPeriodDuration;
     long dateLastDown;
     eventHandler downHandler;

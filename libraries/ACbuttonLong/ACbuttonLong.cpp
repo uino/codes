@@ -4,9 +4,9 @@
 
 #include "ACbuttonLong.h"
 
-ACbuttonLong::ACbuttonLong(int buttonPin)
+ACbuttonLong::ACbuttonLong(int inputPin)
 {
-  this->buttonPin = buttonPin;
+  this->inputPin = inputPin;
   longPeriodDuration = 200;
   dateLastDown = NEVER;
   downHandler = NULL;
@@ -15,7 +15,7 @@ ACbuttonLong::ACbuttonLong(int buttonPin)
 }
 
 void ACbuttonLong::setup() {
-  pinMode(buttonPin, INPUT);
+  pinMode(inputPin, INPUT);
 }
 
 void ACbuttonLong::debug(String msg) {
@@ -24,7 +24,7 @@ void ACbuttonLong::debug(String msg) {
 }
 
 void ACbuttonLong::poll() {
-  byte st = digitalRead(buttonPin);
+  byte st = digitalRead(inputPin);
   if (st == LOW) {
     debug("low");
     if (dateLastDown == NEVER) {

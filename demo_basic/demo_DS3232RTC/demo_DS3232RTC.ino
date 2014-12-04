@@ -1,6 +1,8 @@
 /**
  * Demo for the DS3232RTC library.
+ * Code by Arthur Chargueraud.
  * Adapted from the examples associated with the library.
+ * Copyleft code.
  */
 
 #include <DS3232RTC.h> 

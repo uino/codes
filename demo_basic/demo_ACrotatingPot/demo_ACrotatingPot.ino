@@ -13,13 +13,13 @@
  * Values are between 0 and 1023 inclusive.
  */
 
-#include "ACrotatingPot.h";
+#include <ACrotatingPot.h>
 
-int potPin = A0;
-const int potSensitivity = 20; 
-const boolean potInverted = true; 
+int rotPin = A0;
+const int rotSensitivity = 20; 
+const boolean rotInverted = true; 
 
-ACrotatingPot rot(potPin, potSensitivity, potInverted);
+ACrotatingPot rot(rotPin, rotSensitivity, rotInverted);
 
 void rotChange() {
   Serial.println(rot.getValue());

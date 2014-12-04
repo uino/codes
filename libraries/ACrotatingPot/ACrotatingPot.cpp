@@ -10,6 +10,7 @@ ACrotatingPot::ACrotatingPot(int inputPin)
   changeHandler = NULL;
   sensitivity = 20;
   inverted = false;
+  modulo = 0;
   // code below not needed, but added for safety if forgetting to call "setup"
   valueOffset = 0;
   value = 0;
@@ -30,6 +31,10 @@ void ACrotatingPot::setup() {
 
 void ACrotatingPot::setSensitivity(int sensitivity) {
   this->sensitivity = sensitivity;
+}
+
+void ACrotatingPot::setModulo(int modulo) {
+  this->modulo = modulo;
 }
 
 void ACrotatingPot::rotationInverted(boolean inverted) {
@@ -57,6 +62,8 @@ void ACrotatingPot::resetValue() {
 }
 
 int ACrotatingPot::getValue() {
+  if (modulo != 0)
+    return value % modulo;
   return value;
 }
 
@@ -78,6 +85,8 @@ void ACrotatingPot::poll() {
     }
     if (sensor == 0 || sensor == 1023) {
       valueOffset += valueDelta;
+      if (modulo != 0) // prevent overflows by taking modulo
+        valueOffset = valueOffset % modulo;
       ignoring = (sensor == 0) ? +1 : -1;
       reference = sensor;
     }

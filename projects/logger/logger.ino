@@ -24,6 +24,7 @@
 #include <Time.h>
 #include <Wire.h>  
 #include <ACnokia5100.h>
+#include <ACrotatingPot.h>
 
 
 //*****************************************************************
@@ -41,6 +42,13 @@ const boolean serialUsed = true;
 // Button
 // (pins: buttonPin)
 ACbuttonLong button(2);
+const int buttonSensitivity = 300;
+
+// Rotating potentiometer
+int rotPin = A0;
+const int rotSensitivity = 20; 
+const boolean rotInverted = true; 
+ACrotatingPot rot(rotPin, rotSensitivity, rotInverted);
 
 // SHT1x : for measuring temperature and humidity
 // (pins: dataPin, clockPin)
@@ -204,7 +212,7 @@ void writeMeasuresToLog(Record& r) {}
 String String_of_float(float value, int nbChars, int precision) {
   char chars[] = "                           "; // longer than screenWidth
   dtostrf(value, nbChars, precision, chars); 
-  return String(chars);
+  return "" + String(chars);
 }
 
 // prints a two-digit nonnegative int into a given target string (of length >= 2)
@@ -216,7 +224,6 @@ void timeItemIntoString(int v, char* str) {
 // prints the date into a given target string
 // str needs to have a least 18 characters (15 if no year)
 void timeIntoString(time_t t, char* str, boolean showYear) {
-  int c = 0;
   char* pos = str;
   if (showYear) {
     timeItemIntoString(year(t), pos);
@@ -240,21 +247,33 @@ void timeIntoString(time_t t, char* str, boolean showYear) {
   *pos = '\0';
 }
 
-void clearScreen() {
+void screenClear() {
   screen.clearDisplay(screen.WHITE);
 }
 
 void displayMeasuresOnScreen(Record& r) {
-  clearScreen();
-  char strDate[20];
-  timeIntoString(r.date, strDate, false);
+  // TODO: ça ne marche pas...
+  screenClear();
+  char chrDate[20] = "\0";
+  timeIntoString(r.date, chrDate, false);
   int line = 0;
-  screen.setString(String(strDate), line++, 0);
-  String strValue;
+  String strDate = String(chrDate);
+  screen.setString(strDate, line++, 0);
+  /*
+  String str[nbMeasures];
   for (int m = 0; m < nbMeasures; m++) {
-    strValue = String_of_float(r.values[m], 7, floatPrecision);
-    screen.setString(measureNames[m] + ":" + strValue, line++, 0);
+    str[m] = String_of_float(r.values[m], 5, floatPrecision);
   }
+  for (int m = 0; m < nbMeasures; m++) {
+    // float v = r.values[m];
+    // Serial.println(v);
+    // String strValue = String_of_float(v, 7, floatPrecision);
+    // String str = measureNames[m] + ":" + strValue;
+    String s = measureNames[m] + ":" + str[m];
+    screen.setString(s, m, 0);
+  }
+  */
+  screen.updateDisplay(); 
 }
 
 
@@ -268,9 +287,79 @@ void displayMeasuresOnScreen(Record& r) {
 void makeMeasures(Record& r) {
   r.date = ds3232.get(); 
   float* v = r.values;
-  v[0] = 0.; // sht1x.readHumidity();
-  v[1] = 0.; // sht1x.readTemperatureC();
+  v[0] = sht1x.readHumidity();
+  v[1] = sht1x.readTemperatureC();
   v[2] = ds3232.temperature() / 4.0; 
+}
+
+
+//*****************************************************************
+/* Menu */
+
+int panel = 0;   // current panel being shown
+int select = 0;  // current menu item selected
+int measure = 0; // current measure viewed
+
+const int nbChoices0 = 6; // at most 6
+String choices0[nbChoices0] = {
+  "disp. current",
+  "disp. curve",
+  "disp. measure",
+  "set x-scale",
+  "set y-scale",
+  "set log params" };
+
+void showChoices(int nbChoices, String* choices, int selected) {
+  for (int i = 0; i < nbChoices; i++) {
+    screen.setString(choices[i], i, 0, (i==selected));
+  }
+}
+
+void changePanel(int newPanel) {
+  int oldPanel = panel;
+  panel = newPanel;
+  int modulo = 0;
+  int value = 0;
+  if (panel == 0) {
+    modulo = nbChoices0;
+    value = oldPanel;
+  } 
+  rot.setModulo(modulo);
+  rot.resetValue(value);
+}
+
+void displayPanel() {
+  screenClear();
+  if (panel == 0) {
+    showChoices(nbChoices0, choices0, rot.getValue());
+  } else {
+    screen.setString("a panel", 0, 0);
+  }
+  screen.updateDisplay();
+}
+
+void shortClick() {
+  Serial.println("short click");
+  if (panel == 0) {
+    changePanel(10 * panel + rot.getValue());
+  } else {
+    // go back
+    changePanel(panel / 10);
+  }
+  Serial.println(panel);
+}
+
+void longClick() {
+  Serial.println("long click");
+  // return to previous menu
+  changePanel(panel / 10);
+  Serial.println(panel);
+}
+
+void rotChange() {
+  Serial.println("rot change");
+  Serial.println(rot.getValue());
+  // (change action is implicit on most panels)
 }
 
 
@@ -308,7 +397,6 @@ void setup()
     Serial.begin(serialBaudRate); 
     Serial.println("Starting");
     screen.setString("  Serial", line++, 0);
-    screen.updateDisplay();
   }
 
   // SD card
@@ -325,24 +413,30 @@ void setup()
 
   screen.setString("  SD:", line, 0);
   screen.setString(((SDused) ? "yes" : "no"), line, 5);
-  screen.updateDisplay();
   line++;
+  
+  // Button
+  button.setup();
+  button.setLongPeriodDuration(buttonSensitivity);
+  button.onUp(shortClick);
+  button.onUpAfterLong(longClick);
+
+  // Rotating potentiometer
+  rot.setup();
+  rot.onChange(rotChange);
 
   // DS3232 set initial time
   initializeTime();
 
   // Time.h library (adjust from ds3232 every 300 seconds)
-  // --currently not used
   setSyncProvider(ds3232.get); 
   setSyncInterval(300); 
   screen.setString("  DS3232", line++, 0);
-  screen.updateDisplay();
 
   // Reset log and start
   if (resetLogOnSetup) {
     resetLog();
     screen.setString("  Reset log", line++, 0);
-    screen.updateDisplay();
     if (serialUsed)
       Serial.println("Reset log");
   }
@@ -355,32 +449,38 @@ void setup()
   delay(1000);
 }
 
-
 //*****************************************************************
 /* Main loop */
 
-int counter = 0;
+long dateLastRecord = 0;
+
 void loop()
 {
-  // screen.setString(String(counter++), 0, 0);
-  // screen.updateDisplay(); 
-  Serial.println("ok");
-  delay(1000);
+  long dateNow = now(); 
+  if (dateNow - dateLastRecord > 3000) { // record toutes les 3 secondes
+    dateLastRecord = dateNow;
+    Serial.println("record");
+    Record current;
+    makeMeasures(current);
+    if (serialUsed)
+      printMeasureOnSerial(current);
+    if (SDused) {
+      writeMeasuresToLog(current); 
+      readFileSerialPrint();
+    }
+  }
+  Serial.println("display");
+  displayPanel();
+  button.poll();
+  rot.poll();
+  delay(200);
 }
 
-/*
-void loop()
-{
-  Record current;
-  makeMeasures(current);
-  displayMeasuresOnScreen(current);
-  if (serialUsed)
-    printMeasureOnSerial(current);
-  writeMeasuresToLog(current); 
-  readFileSerialPrint();
-  delay(1000);
-}
-*/
+
+
+
+// marche pas : displayMeasuresOnScreen(current);
+
 //*****************************************************************
 
 

@@ -4,6 +4,7 @@
  * This code is in the public domain.
  */
 
+// TODO: handle long clicks
 
 #include <ACbuttonLong.h>
 

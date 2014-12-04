@@ -56,6 +56,13 @@ class ACrotatingPot
     void setSensitivity(int sensitivity);
 
     /** 
+      * Configure values to be reported modulo a certain constant.
+      * Pass 0 as argument to deactivate this feature. 
+      * Argument most be nonnegative.
+      */
+    void setModulo(int modulo);
+
+    /** 
       * This function must be called very frequently for checking
       * activity on the button
       */
@@ -91,12 +98,13 @@ class ACrotatingPot
     int sensitivity;
     boolean inverted;
     eventHandler changeHandler;
-   
+    int modulo;
+
     int value; // current value of the device
     int valueOffset; // how much was accumulated before moving from lastReference
     int reference; // reference position from which to compute rotations
     int ignoring; // 0 for no direction ignored, +1 or -1 for a particular direction
-
+    
     int readSensor();
     void debug();
 };

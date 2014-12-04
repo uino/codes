@@ -22,7 +22,8 @@
 
 
 // ACnokia5100 pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin
-ACnokia5100 screen(3, 4, 5, 11, 13, 9);
+// ACnokia5100 screen(3, 4, 5, 11, 13, 9);
+ACnokia5100 screen(3, 4, 5, 11, 13, 7);
 
 // Clock:
 RealTimeClockDS1307 clock;  
@@ -31,7 +32,7 @@ RealTimeClockDS1307 clock;
 int potentiometerPin = A0;
 
 // ACbuttonLong pins: buttonPin
-ACbuttonLong button(1);
+ACbuttonLong button(2);
 
 // SHT1x pins: dataPin, clockPin
 SHT1x sht1x(9, 10);
@@ -39,11 +40,15 @@ SHT1x sht1x(9, 10);
 
 void setup()
 {
+  // Serial.begin(9600); 
+
   pinMode(potentiometerPin, INPUT);
 
   screen.setup();
   screen.updateDisplay(); 
   screen.setContrast(60); 
+
+  // Serial.println("starting"); 
 }
 
 String String_of_float(float value, int nbChars, int precision) {

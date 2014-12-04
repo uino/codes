@@ -13,47 +13,65 @@
  * when it is time to perform a measure. This allows for
  * a long-term battery usage of the logger.
  *
+ *
+ * TODO: currently the SD card conflicts with the LCD display
  */
 
+#include <ACbuttonLong.h>
 #include <SD.h>
 #include <SHT1x.h>
 #include <DS3232RTC.h> 
 #include <Time.h>
 #include <Wire.h>  
+#include <ACnokia5100.h>
+
 
 //*****************************************************************
 /* Configuration */
 
-// Serial
-const int serialBaudRate = 115200; // faster than using 9600
+// Log file parameters
+const boolean resetLogOnSetup = true;
+char* filename = "logger.txt"; // name of log file (8+3 characters max)
+boolean SDused = false; // indicates whether SD card should/can be used
 
-// SHT1x : temperature and humidity
-const int dataPin = 9;
-const int clockPin = 10;
-SHT1x sht1x(dataPin, clockPin);
+// Serial : for debugging to PC
+const long serialBaudRate = 115200; // faster than using 9600
+const boolean serialUsed = true;
 
-// ds3232 : clock and temperature
+// Button
+// (pins: buttonPin)
+ACbuttonLong button(2);
+
+// SHT1x : for measuring temperature and humidity
+// (pins: dataPin, clockPin)
+SHT1x sht1x(9, 10);
+
+// ds3232 : for measuring clock and temperature
 DS3232RTC ds3232;
 
-// SD card : for file writing
+// SD card : for writing log file
 const int SDselectPin = 8;
 const int SDhardwareCSPin = 10;
-char* filename = "logger.txt"; // name of log file (8+3 characters max)
-boolean usingSD = true; // indicates whether SD card can be used
+
+// Nokia5100 : for display
+// (pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin)
+ACnokia5100 screen(3, 4, 5, 11, 13, 7);
+const int screenWidth = ACnokia5100::LCD_WIDTH; // = 14
+const int screenHeight = ACnokia5100::LCD_HEIGHT; // = 6
 
 
 //*****************************************************************
 /* Types of measures */
 
-const int nbMeasures = 3;
-const String measureNames[] = { "Humidity", "Temp_SHT1", "Temp_DS3232" };
+const int nbMeasures = 3; // --currently, at most 5 measures
+const String measureNames[] = { "humid.", "t_SHT1", "t_3232" }; // at most 6 chars
 
 typedef struct {
   time_t date;
   float values[nbMeasures];
 } Record;
 
-const int floatPrecision = 4; // nb digits after decimal point recorded in log
+const int floatPrecision = 3; // nb digits after decimal point
 
 
 //*****************************************************************
@@ -62,9 +80,9 @@ const int floatPrecision = 4; // nb digits after decimal point recorded in log
 void printTime(time_t t) {
   Serial.print(year(t)); 
   Serial.print('/');
-  Serial.print(day(t));
-  Serial.print('/');
   Serial.print(month(t));
+  Serial.print('/');
+  Serial.print(day(t));
   Serial.print(' ');
   Serial.print(hour(t));
   Serial.print(':');
@@ -74,7 +92,7 @@ void printTime(time_t t) {
   Serial.println();
 }
 
-void printMeasure(Record& r) {
+void printMeasureOnSerial(Record& r) {
   Serial.println("---------------------------");
   printTime(r.date);
   for (int m = 0; m < nbMeasures; m++) {
@@ -84,12 +102,17 @@ void printMeasure(Record& r) {
   Serial.println("---------------------------");
 }
 
+
+//*****************************************************************
+/* File functions */
+
+
 void writeTime(File file, time_t t) {
   file.print(year(t)); 
   file.print('/');  
-  file.print(day(t));
-  file.print('/');
   file.print(month(t));
+  file.print('/');
+  file.print(day(t));
   file.print('\t');
   file.print(hour(t));
   file.print(':');
@@ -98,12 +121,10 @@ void writeTime(File file, time_t t) {
   file.print(second(t));
 }
 
-
-//*****************************************************************
-/* File functions */
+/*
 
 void readFileSerialPrint() {
-  if (! usingSD)
+  if (! SDused)
     return;
   if (SD.exists(filename)) {
     File file = SD.open(filename, FILE_READ);
@@ -124,12 +145,12 @@ void readFileSerialPrint() {
 }
 
 File openLog() {
-  if (! usingSD) 
+  if (! SDused) 
     return File();
   File file = SD.open(filename, FILE_WRITE);
   if (! file) {
     Serial.println("Error opening file");
-    usingSD = false;
+    SDused = false;
   }
   return file;
 }
@@ -148,7 +169,7 @@ void writeLogHeader() {
 }
 
 void resetLog() {
-  if (! usingSD)
+  if (! SDused)
     return;
   SD.remove(filename);
   writeLogHeader();
@@ -170,6 +191,71 @@ void writeMeasuresToLog(Record& r) {
   file.println("");
   file.close();
 }
+*/
+
+void readFileSerialPrint() {}
+void resetLog() {}
+void writeMeasuresToLog(Record& r) {}
+
+
+//*****************************************************************
+/* LCD functions */
+
+String String_of_float(float value, int nbChars, int precision) {
+  char chars[] = "                           "; // longer than screenWidth
+  dtostrf(value, nbChars, precision, chars); 
+  return String(chars);
+}
+
+// prints a two-digit nonnegative int into a given target string (of length >= 2)
+void timeItemIntoString(int v, char* str) {
+  str[0] = v / 10;
+  str[1] = v % 10;
+}
+
+// prints the date into a given target string
+// str needs to have a least 18 characters (15 if no year)
+void timeIntoString(time_t t, char* str, boolean showYear) {
+  int c = 0;
+  char* pos = str;
+  if (showYear) {
+    timeItemIntoString(year(t), pos);
+    *pos = '/';
+    pos += 3;
+  }
+  timeItemIntoString(month(t), pos);
+  *pos = '/';
+  pos += 3;
+  timeItemIntoString(day(t), pos);
+  *pos = ' ';
+  pos += 3;
+  timeItemIntoString(hour(t), pos);
+  *pos = ':';
+  pos += 3;
+  timeItemIntoString(minute(t), pos);
+  *pos = ':';
+  pos += 3;
+  timeItemIntoString(second(t), pos);
+  pos += 2;
+  *pos = '\0';
+}
+
+void clearScreen() {
+  screen.clearDisplay(screen.WHITE);
+}
+
+void displayMeasuresOnScreen(Record& r) {
+  clearScreen();
+  char strDate[20];
+  timeIntoString(r.date, strDate, false);
+  int line = 0;
+  screen.setString(String(strDate), line++, 0);
+  String strValue;
+  for (int m = 0; m < nbMeasures; m++) {
+    strValue = String_of_float(r.values[m], 7, floatPrecision);
+    screen.setString(measureNames[m] + ":" + strValue, line++, 0);
+  }
+}
 
 
 //*****************************************************************
@@ -182,11 +268,10 @@ void writeMeasuresToLog(Record& r) {
 void makeMeasures(Record& r) {
   r.date = ds3232.get(); 
   float* v = r.values;
-  v[0] = sht1x.readHumidity();
-  v[1] = sht1x.readTemperatureC();
+  v[0] = 0.; // sht1x.readHumidity();
+  v[1] = 0.; // sht1x.readTemperatureC();
   v[2] = ds3232.temperature() / 4.0; 
 }
-
 
 
 //*****************************************************************
@@ -209,44 +294,93 @@ void initializeTime() {
 
 void setup()
 {
-  // initialize serial
-  Serial.begin(serialBaudRate); 
+  int line = 0; // Note: use at most 6 lines on screen
 
-  // initialize SD
-  pinMode(SDhardwareCSPin, OUTPUT); 
-  if (! SD.begin(SDselectPin)) {
-    Serial.println("Card failed or missing");
-    usingSD = false;
+  // LCD screen
+  screen.setup();
+  screen.updateDisplay(); 
+  screen.setContrast(60);
+  screen.setString("Loading...", line++, 0);
+  screen.updateDisplay(); 
+
+  // Serial port
+  if (serialUsed) {
+    Serial.begin(serialBaudRate); 
+    Serial.println("Starting");
+    screen.setString("  Serial", line++, 0);
+    screen.updateDisplay();
   }
 
-  // set a given time into the ds3232
+  // SD card
+  /*
+  if (SDused) {
+    pinMode(SDhardwareCSPin, OUTPUT); 
+    if (! SD.begin(SDselectPin)) {
+      if (serialUsed)
+        Serial.println("Card failed or missing");
+      SDused = false;
+    }
+  }
+  */
+
+  screen.setString("  SD:", line, 0);
+  screen.setString(((SDused) ? "yes" : "no"), line, 5);
+  screen.updateDisplay();
+  line++;
+
+  // DS3232 set initial time
   initializeTime();
 
-  // calls to ensure that the value now() is read from the
-  // ds3232 every 300 seconds, and ajusted using millis()
+  // Time.h library (adjust from ds3232 every 300 seconds)
+  // --currently not used
   setSyncProvider(ds3232.get); 
   setSyncInterval(300); 
+  screen.setString("  DS3232", line++, 0);
+  screen.updateDisplay();
 
-  resetLog();
-  Serial.println("Reset log");
+  // Reset log and start
+  if (resetLogOnSetup) {
+    resetLog();
+    screen.setString("  Reset log", line++, 0);
+    screen.updateDisplay();
+    if (serialUsed)
+      Serial.println("Reset log");
+  }
 
-  Serial.println("Starting up");
+  // Ready for action
+  screen.setString("Ready...", line++, 0);
+  screen.updateDisplay();
+  if (serialUsed)
+    Serial.println("Ready");
+  delay(1000);
 }
 
 
 //*****************************************************************
 /* Main loop */
 
+int counter = 0;
+void loop()
+{
+  // screen.setString(String(counter++), 0, 0);
+  // screen.updateDisplay(); 
+  Serial.println("ok");
+  delay(1000);
+}
+
+/*
 void loop()
 {
   Record current;
   makeMeasures(current);
-  printMeasure(current);
+  displayMeasuresOnScreen(current);
+  if (serialUsed)
+    printMeasureOnSerial(current);
   writeMeasuresToLog(current); 
   readFileSerialPrint();
-  delay(5000);
+  delay(1000);
 }
-
+*/
 //*****************************************************************
 
 

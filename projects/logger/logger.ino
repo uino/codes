@@ -24,6 +24,9 @@
 //*****************************************************************
 /* Configuration */
 
+// Serial
+const int serialBaudRate = 115200; // faster than using 9600
+
 // SHT1x : temperature and humidity
 const int dataPin = 9;
 const int clockPin = 10;
@@ -50,6 +53,141 @@ typedef struct {
   float values[nbMeasures];
 } Record;
 
+const int floatPrecision = 4; // nb digits after decimal point recorded in log
+
+
+//*****************************************************************
+/* Printing function */
+
+void printTime(time_t t) {
+  Serial.print(year(t)); 
+  Serial.print('/');
+  Serial.print(day(t));
+  Serial.print('/');
+  Serial.print(month(t));
+  Serial.print(' ');
+  Serial.print(hour(t));
+  Serial.print(':');
+  Serial.print(minute(t));
+  Serial.print(':');
+  Serial.print(second(t));
+  Serial.println();
+}
+
+void printMeasure(Record& r) {
+  Serial.println("---------------------------");
+  printTime(r.date);
+  for (int m = 0; m < nbMeasures; m++) {
+    Serial.print(measureNames[m] + " ");
+    Serial.println(r.values[m], floatPrecision);  
+  }
+  Serial.println("---------------------------");
+}
+
+void writeTime(File file, time_t t) {
+  file.print(year(t)); 
+  file.print('/');  
+  file.print(day(t));
+  file.print('/');
+  file.print(month(t));
+  file.print('\t');
+  file.print(hour(t));
+  file.print(':');
+  file.print(minute(t));
+  file.print(':');
+  file.print(second(t));
+}
+
+
+//*****************************************************************
+/* File functions */
+
+void readFileSerialPrint() {
+  if (! usingSD)
+    return;
+  if (SD.exists(filename)) {
+    File file = SD.open(filename, FILE_READ);
+    if (! file) {
+      Serial.println("readFileSerialPrint: error opening file");
+    } else {
+      Serial.println("=========begin contents=========");
+      while (file.available()) {
+        byte v = file.read();
+        Serial.write(v);
+      }
+      Serial.println("=========end contents=========");
+      file.close();
+    }
+  } else {
+    Serial.println("readFileSerialPrint: file not found");
+  }
+}
+
+File openLog() {
+  if (! usingSD) 
+    return File();
+  File file = SD.open(filename, FILE_WRITE);
+  if (! file) {
+    Serial.println("Error opening file");
+    usingSD = false;
+  }
+  return file;
+}
+
+void writeLogHeader() {
+  File file = openLog();
+  if (! file)
+    return;
+  file.print("#date\ttime\tunixtime\t");
+  for (int m = 0; m < nbMeasures; m++) {
+    file.print(measureNames[m]);  
+    file.print("\t");
+  }
+  file.println("");
+  file.close();
+}
+
+void resetLog() {
+  if (! usingSD)
+    return;
+  SD.remove(filename);
+  writeLogHeader();
+}
+
+void writeMeasuresToLog(Record& r) {
+  File file = openLog();
+  if (! file)
+    return;
+  time_t t = r.date;
+  writeTime(file, t);
+  file.print("\t");
+  file.print(r.date);
+  file.print("\t");
+  for (int m = 0; m < nbMeasures; m++) {
+    file.print(r.values[m], floatPrecision);  
+    file.print("\t");
+  }
+  file.println("");
+  file.close();
+}
+
+
+//*****************************************************************
+/* Performing measures */
+
+// Remarks:
+// - date is read from the ds3232 time (without interpolation from "millis")
+// - the ds3232 returns an int equal to 4 times the temperature.
+
+void makeMeasures(Record& r) {
+  r.date = ds3232.get(); 
+  float* v = r.values;
+  v[0] = sht1x.readHumidity();
+  v[1] = sht1x.readTemperatureC();
+  v[2] = ds3232.temperature() / 4.0; 
+}
+
+
 
 //*****************************************************************
 /* Setup */
@@ -72,7 +210,7 @@ void initializeTime() {
 void setup()
 {
   // initialize serial
-  Serial.begin(9600); 
+  Serial.begin(serialBaudRate); 
 
   // initialize SD
   pinMode(SDhardwareCSPin, OUTPUT); 
@@ -89,110 +227,10 @@ void setup()
   setSyncProvider(ds3232.get); 
   setSyncInterval(300); 
 
+  resetLog();
+  Serial.println("Reset log");
+
   Serial.println("Starting up");
-}
-
-//*****************************************************************
-/* Debugging function */
-
-void printTime(time_t t) {
-  Serial.print(year(t)); 
-  Serial.print('/');
-  Serial.print(day(t));
-  Serial.print('/');
-  Serial.print(month(t));
-  Serial.print(' ');
-  Serial.print(hour(t));
-  Serial.print(':');
-  Serial.print(minute(t));
-  Serial.print(':');
-  Serial.print(second(t));
-  Serial.println();
-}
-
-void printMeasure(Record& r) {
-  Serial.println("---------------------------");
-  printTime(r.date);
-  for (int m = 0; m < nbMeasures; m++) {
-    Serial.print(measureNames[m] + " ");
-    Serial.println(r.values[m]);  
-  }
-  Serial.println("---------------------------");
-}
-
-
-//*****************************************************************
-/* File functions */
-
-void readFileSerialPrint() {
-  if (!usingSD)
-    return;
-  if (SD.exists(filename)) {
-    File file = SD.open(filename, FILE_READ);
-    if (! file) {
-      Serial.println("readFileSerialPrint: error opening file");
-    } else {
-      Serial.println("=========begin contents=========");
-      while (file.available()) {
-        byte v = file.read();
-        Serial.write(v);
-      }
-      Serial.println("=========end contents=========");
-      file.close();
-    }
-  } else {
-    Serial.println("readFileSerialPrint: file not found");
-  }
-}
-
-void resetLog() {
-  if (!usingSD)
-    return;
-  SD.remove(filename);
-}
-
-void writeMeasuresToLog(Record& r) {
-  File file = SD.open(filename, FILE_WRITE);
-  if (! file) {
-    Serial.println("writeMeasuresToLog: error opening write");
-    return;
-  }
-  time_t t = r.date;
-  file.print(year(t)); 
-  file.print('/');
-  file.print(day(t));
-  file.print('/');
-  file.print(month(t));
-  file.print(' ');
-  file.print(hour(t));
-  file.print(':');
-  file.print(minute(t));
-  file.print(':');
-  file.print(second(t));
-  file.print(' ');
-  file.print(r.date);
-  file.print(" ");
-  for (int m = 0; m < nbMeasures; m++) {
-    file.println(r.values[m]);  
-  }
-  file.println("");
-  file.close();
-}
-
-
-//*****************************************************************
-/* Performing measures */
-
-// Remarks:
-// - date is read from the ds3232 time (without interpolation from "millis")
-// - the ds3232 returns an int equal to 4 times the temperature.
-
-void makeMeasures(Record& r) {
-  r.date = ds3232.get(); 
-  float* v = r.values;
-  v[0] = sht1x.readHumidity();
-  v[1] = sht1x.readTemperatureC();
-  v[2] = ds3232.temperature() / 4.0; 
 }
 
 

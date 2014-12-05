@@ -67,19 +67,26 @@ ACnokia5100 screen(3, 4, 5, 11, 13, 7);
 const int screenWidth = ACnokia5100::LCD_WIDTH; // = 14
 const int screenHeight = ACnokia5100::LCD_HEIGHT; // = 6
 
+// Measure configuration
+const int nbMeasures = 3; // --currently, at most 5 measures
+const String measureNames[] = { "humid.", "t_SHT1", "t_3232" }; // at most 6 chars
+const int floatPrecision = 3; // nb digits after decimal point
+
+// History configuration
+const int maxHistory = 500;
+
 
 //*****************************************************************
 /* Types of measures */
-
-const int nbMeasures = 3; // --currently, at most 5 measures
-const String measureNames[] = { "humid.", "t_SHT1", "t_3232" }; // at most 6 chars
 
 typedef struct {
   time_t date;
   float values[nbMeasures];
 } Record;
 
-const int floatPrecision = 3; // nb digits after decimal point
+// History data
+int nbHistory;
+Record history[maxHistory];
 
 
 //*****************************************************************
@@ -111,27 +118,13 @@ void printMeasureOnSerial(Record& r) {
 }
 
 
+
 //*****************************************************************
 /* File functions */
 
-
-void writeTime(File file, time_t t) {
-  file.print(year(t)); 
-  file.print('/');  
-  file.print(month(t));
-  file.print('/');
-  file.print(day(t));
-  file.print('\t');
-  file.print(hour(t));
-  file.print(':');
-  file.print(minute(t));
-  file.print(':');
-  file.print(second(t));
-}
-
 /*
 
-void readFileSerialPrint() {
+void readFileSerialPrint() { // TODO: move to library
   if (! SDused)
     return;
   if (SD.exists(filename)) {
@@ -152,10 +145,24 @@ void readFileSerialPrint() {
   }
 }
 
-File openLog() {
+void writeTime(File file, time_t t) {
+  file.print(year(t)); 
+  file.print('/');  
+  file.print(month(t));
+  file.print('/');
+  file.print(day(t));
+  file.print('\t');
+  file.print(hour(t));
+  file.print(':');
+  file.print(minute(t));
+  file.print(':');
+  file.print(second(t));
+}
+
+File openLog(byte mode) {
   if (! SDused) 
     return File();
-  File file = SD.open(filename, FILE_WRITE);
+  File file = SD.open(filename, mode);
   if (! file) {
     Serial.println("Error opening file");
     SDused = false;
@@ -164,7 +171,7 @@ File openLog() {
 }
 
 void writeLogHeader() {
-  File file = openLog();
+  File file = openLog(FILE_WRITE);
   if (! file)
     return;
   file.print("#date\ttime\tunixtime\t");
@@ -183,10 +190,49 @@ void resetLog() {
   writeLogHeader();
 }
 
-void writeMeasuresToLog(Record& r) {
-  File file = openLog();
+void readRecordFromFile(File file, Record& r) {
+  // read and ignore the human readable date
+  String date = file.readStringUntil('\t');
+  String time = file.readStringUntil('\t');
+  // read the date and the measures into the record
+  long unixtime = file.parseInt();
+  r.date = unixtime;
+  for (int m = 0; m < nbMeasures; m++) {
+    float value = file.parseFloat();
+    r.values[m] = value;
+  }
+  // read what remains of the line
+  file.readStringUntil('\n');
+}
+
+// returns the number effectively read
+int readRecordsFromFile(File file, int maxNbRecords, Record* rs) {
+  int count = 0;
+  while (file.available()) {
+    // ignore lines that start with a '#' symbol
+    if (file.peek() == '#') {
+      file.readStringUntil('\n');
+      continue;
+    }
+    // other lines are parsed as records
+    readRecordFromFile(file, rs[count]);
+    // for debug: printMeasureOnSerial(r);
+    count++;
+    if (count >= maxNbRecords)
+      return count;
+  }
+  return count;
+}
+
+void readRecordsFromLog() {
+  File file = openLog(FILE_READ);
   if (! file)
     return;
+  nbHistory = readRecordsFromFile(file, maxHistory, history);
+  file.close();
+}
+
+void writeRecordToFile(File file, Record& r) {
   time_t t = r.date;
   writeTime(file, t);
   file.print("\t");
@@ -197,13 +243,21 @@ void writeMeasuresToLog(Record& r) {
     file.print("\t");
   }
   file.println("");
+}
+
+void writeRecordToLog(Record& r) {
+  File file = openLog(FILE_WRITE);
+  if (! file)
+    return;
+  writeRecordToFile(file, r);
   file.close();
 }
+
 */
 
 void readFileSerialPrint() {}
 void resetLog() {}
-void writeMeasuresToLog(Record& r) {}
+void writeRecordToLog(Record& r) {}
 
 
 //*****************************************************************
@@ -465,7 +519,7 @@ void loop()
     if (serialUsed)
       printMeasureOnSerial(current);
     if (SDused) {
-      writeMeasuresToLog(current); 
+      writeRecordToLog(current); 
       readFileSerialPrint();
     }
   }

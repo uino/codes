@@ -17,6 +17,7 @@
  */
 
 #include <SD.h>
+#include <Time.h>
 
 //*****************************************************************
 /* Configuration */
@@ -88,19 +89,25 @@ void printHierarchy() {
 //*****************************************************************
 /* Actions */
 
+
 // write here actions to be performed
 void actions() {
+
   if (false) {
     // print hierarchy of files
     printHierarchy();
   }
 
-  if (true) {
+  if (false) {
     // read and print content one file
     char* filename = "logger.txt"; 
     Serial.println("=========begin contents=========");
     readFileSerialPrint(filename); 
     Serial.println("=========end contents=========");
+  }
+
+  if (false) {
+    Serial.println("Starting demo");
   }
 }
 

@@ -64,8 +64,6 @@ const int SDhardwareCSPin = 10;
 // Nokia5100 : for display
 // (pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin)
 ACnokia5100 screen(3, 4, 5, 11, 13, 7);
-const int screenWidth = ACnokia5100::LCD_WIDTH; // = 14
-const int screenHeight = ACnokia5100::LCD_HEIGHT; // = 6
 
 // Measure configuration
 const int nbMeasures = 3; // --currently, at most 5 measures

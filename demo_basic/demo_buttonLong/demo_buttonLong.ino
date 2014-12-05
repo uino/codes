@@ -8,7 +8,7 @@
 
 #include <ACbuttonLong.h>
 
-const int buttonPin = 1;
+const int buttonPin = 2;
 const long durationLong = 200; // milliseconds
 
 ACbuttonLong button(buttonPin);

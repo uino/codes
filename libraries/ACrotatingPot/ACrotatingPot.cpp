@@ -45,6 +45,18 @@ void ACrotatingPot::onChange(eventHandler handler) {
   changeHandler = handler;
 }
 
+int ACrotatingPot::getModuloValue(int v) {
+  if (modulo == 0)
+    return v;
+  if (0 <= v && v < modulo)
+    return v;
+  v = v % modulo;
+  if (v >= 0)
+    return v;
+  else
+    return v + modulo;
+}
+
 int ACrotatingPot::readSensor()
 {
   return analogRead(inputPin);
@@ -62,9 +74,7 @@ void ACrotatingPot::resetValue() {
 }
 
 int ACrotatingPot::getValue() {
-  if (modulo != 0)
-    return value % modulo;
-  return value;
+  return getModuloValue(value);
 }
 
 void ACrotatingPot::poll() {
@@ -78,15 +88,20 @@ void ACrotatingPot::poll() {
   }
   if (ignoring == 0) {
     int valueDelta = (sensor - reference) / sensitivity;
+    if (inverted) {
+      valueDelta = -valueDelta;
+    }
     int valueNew = valueOffset + valueDelta;
     if (value != valueNew) {
       value = valueNew;
-      changeHandler();
+      if (changeHandler != NULL) {
+        changeHandler();
+      }
     }
     if (sensor == 0 || sensor == 1023) {
       valueOffset += valueDelta;
-      if (modulo != 0) // prevent overflows by taking modulo
-        valueOffset = valueOffset % modulo;
+      // prevent long-term overflows by taking modulo if needed
+      valueOffset = getModuloValue(valueOffset);
       ignoring = (sensor == 0) ? +1 : -1;
       reference = sensor;
     }

@@ -107,6 +107,7 @@ class ACrotatingPot
     
     int readSensor();
     void debug();
+    int getModuloValue(int value);
 };
 
 #endif

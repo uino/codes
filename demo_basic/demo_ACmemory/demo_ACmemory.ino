@@ -31,11 +31,11 @@ const prog_byte testBytes[] PROGMEM = { 0x5f, 0x6f };
 
 
 
-const char MenuItem0 [] PROGMEM = "Menu Item 0";
-const char MenuItem1 [] PROGMEM = "Menu Item 1";
-const char MenuItem2 [] PROGMEM = "Menu Item 2";
+const char MenuItem0[] PROGMEM = "Menu Item 0";
+const char MenuItem1[] PROGMEM = "Menu Item 1";
+const char MenuItem2[] PROGMEM = "Menu Item 2";
 typedef const char* fstring;
-fstring const MenuItemPointers [] PROGMEM = { MenuItem0, MenuItem1, MenuItem2 };
+fstring const MenuItemPointers[] PROGMEM = { MenuItem0, MenuItem1, MenuItem2 };
 
 
 void report() {

@@ -41,33 +41,33 @@ ACnokia5100 screen(3, 4, 5, 11, 13, 7);
 //*****************************************************************
 /* Menu definition */
 
-const int nbPanels = 2;
-const int nbPanelItems[nbPanels] = { 
-  15, // panel 0
-  3   // panel 1
-  };
 
-typedef PROGMEM char prog_char;
-typedef PROGMEM const prog_char* const pstring;
+const int panelItems0_size = 16;
+const char panelItems0_0[] PROGMEM = "disp. submenu";
+const char panelItems0_1[] PROGMEM = "disp. curve";
+const char panelItems0_2[] PROGMEM = "disp. all";
+const char panelItems0_3[] PROGMEM = "set a";
+const char panelItems0_4[] PROGMEM = "set b";
+const char panelItems0_5[] PROGMEM = "set c";
+const char panelItems0_6[] PROGMEM = "set b";
+const char panelItems0_7[] PROGMEM = "set d";
+const char panelItems0_8[] PROGMEM = "set e";
+const char panelItems0_9[] PROGMEM = "set f";
+const char panelItems0_10[] PROGMEM = "set g";
+const char panelItems0_11[] PROGMEM = "set h";
+const char panelItems0_12[] PROGMEM = "set i";
+const char panelItems0_13[] PROGMEM = "set j";
+const char panelItems0_14[] PROGMEM = "set k";
+const char panelItems0_15[] PROGMEM = "set l";
 
-PROGMEM const prog_char panelItems0_0[] = "disp. submenu";
-PROGMEM const prog_char panelItems0_1[] = "disp. curve";
-PROGMEM const prog_char panelItems0_2[] = "disp. all";
-PROGMEM const prog_char panelItems0_3[] = "set a";
-PROGMEM const prog_char panelItems0_4[] = "set b";
-PROGMEM const prog_char panelItems0_5[] = "set c";
-PROGMEM const prog_char panelItems0_6[] = "set b";
-PROGMEM const prog_char panelItems0_7[] = "set d";
-PROGMEM const prog_char panelItems0_8[] = "set e";
-PROGMEM const prog_char panelItems0_9[] = "set f";
-PROGMEM const prog_char panelItems0_10[] = "set g";
-PROGMEM const prog_char panelItems0_11[] = "set h";
-PROGMEM const prog_char panelItems0_12[] = "set i";
-PROGMEM const prog_char panelItems0_13[] = "set j";
-PROGMEM const prog_char panelItems0_14[] = "set k";
-PROGMEM const prog_char panelItems0_15[] = "set l";
+const int panelItems1_size = 3;
+const char panelItems1_0[] PROGMEM = "set x-scale";
+const char panelItems1_1[] PROGMEM = "set y-scale";
+const char panelItems1_2[] PROGMEM = "set log params";
 
-const pstring panelItems0[] = { 
+typedef const char* fstring;
+
+const fstring panelItems[] PROGMEM = { 
   panelItems0_0, 
   panelItems0_1, 
   panelItems0_2, 
@@ -83,23 +83,25 @@ const pstring panelItems0[] = {
   panelItems0_12, 
   panelItems0_13, 
   panelItems0_14, 
-  panelItems0_15 };
+  panelItems0_15,
 
-/*
-cstring panelItems1[] =
-  {
-  "set x-scale",
-  "set y-scale",
-  "set log params"
+  panelItems1_0, 
+  panelItems1_1, 
+  panelItems1_2, 
   };
 
-cstring* panelItems[nbPanels] = { 
-  panelItems0, 
-  panelItems1 };
-*/
+typedef struct {
+  int nbItems;
+  const fstring* items;
+} PanelDescr;
 
-pstring* panelItems[nbPanels] = { 
-  panelItems0 
+
+// TODO: could be in flash memory as well if needed
+const int nbPanels = 2;
+const PanelDescr panelDescrs[nbPanels] = { 
+  { panelItems0_size, panelItems+0 },
+  { panelItems1_size, panelItems+panelItems0_size },
+  // { panelItems2_size, panelItems+panelItems0_size+panelItems1_size },
   };
 
 
@@ -120,18 +122,25 @@ const int BLACK = ACnokia5100::BLACK;
 
 //TODO: move to library
 
-void displayChoices(pstring* choices, int firstChoice, int nbChoices, int selected) {
+// assumes buffer length >= bufferRowLength, and storing null-terminated string.
+void completeLineWithSpaces(char* buffer) {
+  int len = strlen(buffer);
+  for (int k = len; k < screenNbCols; k++) {
+    buffer[k] = ' ';
+  }
+  buffer[screenNbCols] = '\0';
+}
+
+void displayChoices(const fstring* choices, int firstChoice, int nbChoices, int selected) {
   char buffer[bufferRowLength];
   screen.clearDisplay(WHITE);
-  // Serial.println("---");
-  for (int i = firstChoice; i < firstChoice+nbChoices; i++) {
-    boolean whiteBackground = (i != selected);
-    // Later: StringCompleteTo14(choices[i]);
-    pstring pline = choices[i];
-    strcpy_P(buffer, pline);
-    screen.setString(buffer, i, 0, whiteBackground);
-    //Serial.print(i);
-    //Serial.println("");
+  for (int line = 0; line < nbChoices; line++) {
+    int item = firstChoice + line;
+    boolean whiteBackground = (item != selected);
+    fstring fline = ((fstring) pgm_read_word(& choices[item]));
+    strcpy_P(buffer, fline);
+    completeLineWithSpaces(buffer);
+    screen.setString(buffer, line, 0, whiteBackground);
   }
   screen.updateDisplay();
 }
@@ -140,30 +149,17 @@ int panel = 0;
 
 int menuCurrent = 0; // should be between 0 and nbPanelItems[panel]
 int menuPevious = -1;
-/*
-const char MenuItem1 [] PROGMEM = " Menu Item 1 ";
-const char MenuItem2 [] PROGMEM = " Menu Item 2 ";
-const char MenuItem3 [] PROGMEM = " Menu Item 3 ";
-const char * const MenuItemPointers [] PROGMEM = { MenuItem1 , MenuItem2 , MenuItem3 };
-void main ( void )
-{
-while (1) // Eternal Loop
-{
-char EnteredNum = USART_GetNum () ;
-USART_TxString_P ( pgm_read_word (& MenuItemPointers [ EnteredNum ]) );
-}
-}
-*/
 
 void displayMenu() {
   if (menuCurrent == menuPevious)
     return; // if no change, nothing to do
-  Serial.println(F("display menu"));
-  Serial.println(menuCurrent);
+  // Serial.println(F("display menu"));
+  // Serial.println(menuCurrent);
   int idPage = menuCurrent / screenNbRows;
   int idFirst = idPage * screenNbRows;
-  int nbShown = min(screenNbRows, nbPanelItems[panel] - idFirst);
-  displayChoices(panelItems[panel], idFirst, nbShown, menuCurrent);
+  PanelDescr descr = panelDescrs[panel];
+  int nbShown = min(screenNbRows, descr.nbItems - idFirst);
+  displayChoices(descr.items, idFirst, nbShown, menuCurrent);
   menuPevious = menuCurrent;
 }
 
@@ -171,13 +167,12 @@ void enterPanel(int idPanel) {
   Serial.println(F("enter panel"));
   panel = idPanel;
   menuPevious = -1;
-  rot.setModulo(nbPanelItems[panel]);
+  rot.setModulo(panelDescrs[panel].nbItems);
   rot.resetValue(0);
 }
 
 void shortClick() {
   Serial.println(F("short click"));
-  Serial.println(menuCurrent);
   if (panel == 0) {
     if (menuCurrent == 0) {
       enterPanel(1);
@@ -187,7 +182,6 @@ void shortClick() {
 
 void longClick() {
   Serial.println(F("long click"));
-  Serial.println(menuCurrent);
   if (panel == 1) {
     enterPanel(0);
   }

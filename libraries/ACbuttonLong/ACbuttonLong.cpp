@@ -4,9 +4,13 @@
 
 #include "ACbuttonLong.h"
 
-ACbuttonLong::ACbuttonLong(int buttonPin)
+#define DebugPrint(msg)
+// use command below for debugging
+// #define DebugPrint(msg) Serial.println(msg)
+
+ACbuttonLong::ACbuttonLong(int inputPin)
 {
-  this->buttonPin = buttonPin;
+  this->inputPin = inputPin;
   longPeriodDuration = 200;
   dateLastDown = NEVER;
   downHandler = NULL;
@@ -15,26 +19,24 @@ ACbuttonLong::ACbuttonLong(int buttonPin)
 }
 
 void ACbuttonLong::setup() {
-  pinMode(buttonPin, INPUT);
+  pinMode(inputPin, INPUT);
 }
 
 void ACbuttonLong::poll() {
-  byte st = digitalRead(buttonPin);
+  byte st = digitalRead(inputPin);
   if (st == LOW) {
-      Serial.println("low");
+    DebugPrint("low");
     if (dateLastDown == NEVER) {
-       Serial.println("high to low");
-      // transition from HIGH to LOW
+      DebugPrint("high to low");
       dateLastDown = millis();
       if (downHandler != NULL) {
         downHandler();
       }
     } 
   } else { // (st == HIGH)
-      Serial.println("high");
+    DebugPrint("high");
     if (dateLastDown != NEVER) {
-      Serial.println("low to high");
-     // transition from LOW to HIGH
+      DebugPrint("low to high");
       long duration = millis() - dateLastDown;
       dateLastDown = NEVER;
       if (upAfterLongHandler != NULL 

@@ -1,7 +1,8 @@
 /**
    Nokia 5100 LCD Library
 
-   Adapted by Arthur Chargueraud from code by!
+   Adapted by Arthur Chargueraud.
+   Placed the character table in Flash instead of SRAM.
 
    ---
      Graphics driver and PCD8544 interface code for SparkFun's
@@ -42,6 +43,14 @@
 #include <Arduino.h>
 #include <SPI.h>
 
+// Place the following line uncommented in your code, before the include of ACnokia5100.h
+// to allocate the character table in Flash instead of SRAM
+#define ACnokia5100_IN_SRAM
+
+#ifdef ACnokia5100_IN_SRAM
+#include <avr/pgmspace.h>
+typedef const byte PROGMEM prog_byte;
+#endif
 
 class ACnokia5100
 {
@@ -84,6 +93,11 @@ class ACnokia5100
       * The screen won't actually clear until you call updateDisplay().
       */
     void clearDisplay(boolean st);
+
+    /** 
+      * Same as clearDisplay(WHITE);
+      */
+    void clearDisplay();
 
     /** 
       * Set the state of a given pixel; true=Black and false=white
@@ -185,7 +199,12 @@ class ACnokia5100
     font that is 5 pixels wide and 8 pixels high. Each byte in a row
     represents one, 8-pixel, vertical column of a character. 5 bytes
     per character. */
-    static const byte ASCII[][5];
+
+#ifndef ACnokia5100_IN_SRAM
+    static const byte ASCII[];
+#else
+    PROGMEM static const prog_byte ASCII[];
+#endif
   
     /* The displayMap variable stores a buffer representation of the
     pixels on our display. There are 504 total bits in this array,

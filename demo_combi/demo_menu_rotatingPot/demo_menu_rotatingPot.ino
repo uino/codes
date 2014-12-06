@@ -8,11 +8,15 @@
  * and a button (with short and long clicks, using the
  * ACbuttonLong library).
  *
+ * Be careful to allocate strings in Flash and not in SRAM
+ * in order to avoid running out of space.
  */
 
 #include <ACnokia5100.h>
 #include <ACrotatingPot.h>
 #include <ACbuttonLong.h>
+#include <avr/pgmspace.h> 
+#include <ACmemory.h>
 
 
 //*****************************************************************
@@ -43,36 +47,61 @@ const int nbPanelItems[nbPanels] = {
   3   // panel 1
   };
 
-char* panelItems0[] =
-  {
-  "disp. submenu",
-  "disp. curve",
-  "disp. measure",
-  "disp. all",
-  "set a",
-  "set b",
-  "set c",
-  "set d",
-  "set e",
-  "set f",
-  "set x-scale",
-  "set y-scale",
-  "set log params",
-  "sleep",
-  "reset device" 
-  };
+typedef PROGMEM char prog_char;
+typedef PROGMEM const prog_char* const pstring;
 
-char* panelItems1[] =
+PROGMEM const prog_char panelItems0_0[] = "disp. submenu";
+PROGMEM const prog_char panelItems0_1[] = "disp. curve";
+PROGMEM const prog_char panelItems0_2[] = "disp. all";
+PROGMEM const prog_char panelItems0_3[] = "set a";
+PROGMEM const prog_char panelItems0_4[] = "set b";
+PROGMEM const prog_char panelItems0_5[] = "set c";
+PROGMEM const prog_char panelItems0_6[] = "set b";
+PROGMEM const prog_char panelItems0_7[] = "set d";
+PROGMEM const prog_char panelItems0_8[] = "set e";
+PROGMEM const prog_char panelItems0_9[] = "set f";
+PROGMEM const prog_char panelItems0_10[] = "set g";
+PROGMEM const prog_char panelItems0_11[] = "set h";
+PROGMEM const prog_char panelItems0_12[] = "set i";
+PROGMEM const prog_char panelItems0_13[] = "set j";
+PROGMEM const prog_char panelItems0_14[] = "set k";
+PROGMEM const prog_char panelItems0_15[] = "set l";
+
+const pstring panelItems0[] = { 
+  panelItems0_0, 
+  panelItems0_1, 
+  panelItems0_2, 
+  panelItems0_3, 
+  panelItems0_4,  
+  panelItems0_5, 
+  panelItems0_6, 
+  panelItems0_7, 
+  panelItems0_8, 
+  panelItems0_9, 
+  panelItems0_10, 
+  panelItems0_11, 
+  panelItems0_12, 
+  panelItems0_13, 
+  panelItems0_14, 
+  panelItems0_15 };
+
+/*
+cstring panelItems1[] =
   {
   "set x-scale",
   "set y-scale",
   "set log params"
   };
 
-
-char** panelItems[nbPanels] = { 
+cstring* panelItems[nbPanels] = { 
   panelItems0, 
   panelItems1 };
+*/
+
+pstring* panelItems[nbPanels] = { 
+  panelItems0 
+  };
+
 
 
 //*****************************************************************
@@ -80,46 +109,29 @@ char** panelItems[nbPanels] = {
 
 const int screenNbRows = ACnokia5100::LCD_ROWS;
 const int screenNbCols = ACnokia5100::LCD_COLS; // assumed to be 14
+const int bufferRowLength = 30; // = screenNbCols+1 (but using more characters for safety)
 
 const int WHITE = ACnokia5100::WHITE;
 const int BLACK = ACnokia5100::BLACK;
 
 
 //*****************************************************************
-/* String manipulation constants */
-/* LATER
-String spaces[8] = {
-  "",
-  " ",
-  "  ",
-  "   ",
-  "    ",
-  "     ",
-  "      ",
-  "       ",
-};
-
-String StringCompleteTo14(String base) {
-  int nb = 14;
-  int len = base.length();
-  if (len >= nb)
-    return base;
-  else if (len >= 7)
-    return base + spaces[nb-len];
-  else
-    return base + spaces[7] + spaces[nb-len-7];
-}
-*/
-
-//*****************************************************************
 /* Menu implementation */
 
-void displayChoices(char** choices, int nbChoices, int selected) {
+//TODO: move to library
+
+void displayChoices(pstring* choices, int firstChoice, int nbChoices, int selected) {
+  char buffer[bufferRowLength];
   screen.clearDisplay(WHITE);
-  for (int i = 0; i < nbChoices; i++) {
+  // Serial.println("---");
+  for (int i = firstChoice; i < firstChoice+nbChoices; i++) {
     boolean whiteBackground = (i != selected);
     // Later: StringCompleteTo14(choices[i]);
-    screen.setString(choices[i], i, 0, whiteBackground);
+    pstring pline = choices[i];
+    strcpy_P(buffer, pline);
+    screen.setString(buffer, i, 0, whiteBackground);
+    //Serial.print(i);
+    //Serial.println("");
   }
   screen.updateDisplay();
 }
@@ -128,19 +140,35 @@ int panel = 0;
 
 int menuCurrent = 0; // should be between 0 and nbPanelItems[panel]
 int menuPevious = -1;
+/*
+const char MenuItem1 [] PROGMEM = " Menu Item 1 ";
+const char MenuItem2 [] PROGMEM = " Menu Item 2 ";
+const char MenuItem3 [] PROGMEM = " Menu Item 3 ";
+const char * const MenuItemPointers [] PROGMEM = { MenuItem1 , MenuItem2 , MenuItem3 };
+void main ( void )
+{
+while (1) // Eternal Loop
+{
+char EnteredNum = USART_GetNum () ;
+USART_TxString_P ( pgm_read_word (& MenuItemPointers [ EnteredNum ]) );
+}
+}
+*/
 
 void displayMenu() {
   if (menuCurrent == menuPevious)
     return; // if no change, nothing to do
+  Serial.println(F("display menu"));
   Serial.println(menuCurrent);
   int idPage = menuCurrent / screenNbRows;
   int idFirst = idPage * screenNbRows;
   int nbShown = min(screenNbRows, nbPanelItems[panel] - idFirst);
-  displayChoices(panelItems[panel]+idFirst, nbShown, menuCurrent-idFirst);
+  displayChoices(panelItems[panel], idFirst, nbShown, menuCurrent);
   menuPevious = menuCurrent;
 }
 
 void enterPanel(int idPanel) {
+  Serial.println(F("enter panel"));
   panel = idPanel;
   menuPevious = -1;
   rot.setModulo(nbPanelItems[panel]);
@@ -148,7 +176,7 @@ void enterPanel(int idPanel) {
 }
 
 void shortClick() {
-  Serial.println("short click");
+  Serial.println(F("short click"));
   Serial.println(menuCurrent);
   if (panel == 0) {
     if (menuCurrent == 0) {
@@ -158,7 +186,7 @@ void shortClick() {
 }
 
 void longClick() {
-  Serial.println("long click");
+  Serial.println(F("long click"));
   Serial.println(menuCurrent);
   if (panel == 1) {
     enterPanel(0);
@@ -169,10 +197,16 @@ void longClick() {
 //*****************************************************************
 /* Main */
 
+void reportSRAM() {
+  Serial.print(F("SRAM free: "));
+  Serial.println(getFreeSRAM());
+}
+
 void setup()
 {
   // Serial port
   Serial.begin(9600);
+  reportSRAM();
 
   // LCD screen
   screen.setup();
@@ -228,3 +262,31 @@ void loop()
   Serial.print("shown : ");
   Serial.println(nbShown);
   */
+
+
+
+//*****************************************************************
+/* String manipulation constants */
+/* LATER
+String spaces[8] = {
+  "",
+  " ",
+  "  ",
+  "   ",
+  "    ",
+  "     ",
+  "      ",
+  "       ",
+};
+
+String StringCompleteTo14(String base) {
+  int nb = 14;
+  int len = base.length();
+  if (len >= nb)
+    return base;
+  else if (len >= 7)
+    return base + spaces[nb-len];
+  else
+    return base + spaces[7] + spaces[nb-len-7];
+}
+*/

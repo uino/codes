@@ -108,14 +108,13 @@ void ACrotatingPot::poll() {
   }
 }
 
-void ACrotatingPot::debug() {
-  if (true) {
-    Serial.println("value = " + String(value));
-    Serial.println("valueOffset = " + String(valueOffset));
-    Serial.println("ignoring = " + String(ignoring));
-    Serial.println("reference = " + String(reference));
-    Serial.println("=================");
-  }
+/*
+void debug() {
+  Serial.println("value = " + String(value));
+  Serial.println("valueOffset = " + String(valueOffset));
+  Serial.println("ignoring = " + String(ignoring));
+  Serial.println("reference = " + String(reference));
+  Serial.println("=================");
 }
-
+*/
 

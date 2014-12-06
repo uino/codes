@@ -22,13 +22,15 @@
 
 // #include <ACbuttonLong.h>
 // #include <SD.h>
+#include <ACmemory.h>
+#include <avr/pgmspace.h>
 #include <SHT1x.h>
 #include <DS3232RTC.h> 
 #include <Time.h>
 #include <Wire.h>  
 #include <ACnokia5100.h>
 #include <ACrotatingPot.h>
-#include <avr/pgmspace.h>
+#include <ACbuttonLong.h>
 
 //*****************************************************************
 /* Configuration */
@@ -44,7 +46,7 @@ const boolean serialUsed = true;
 
 // Button
 // (pins: buttonPin)
-// ACbuttonLong button(2);
+ACbuttonLong button(2);
 const int buttonSensitivity = 300;
 
 // Rotating potentiometer
@@ -70,7 +72,7 @@ const int SDhardwareCSPin = 10;
 
 // Measure configuration
 const int nbMeasures = 3; // --currently, at most 5 measures
-const String measureNames[] = { "humid.", "t_SHT1", "t_3232" }; // at most 6 chars
+const String measureNames[] = { "humid.", "t_SHT1", "t_3232" }; // at most 6 chars  // TODO: move to flash
 const int floatPrecision = 3; // nb digits after decimal point
 
 // History configuration
@@ -105,8 +107,17 @@ void addRecordToHistory(Record& r) {
   history[nbHistory] = r;
   nbHistory++;
 }
-/*
-*/
+
+//*****************************************************************
+/* Memory functions */
+
+void reportSRAM() {
+  if (!serialUsed) 
+    return;
+  Serial.print(F("SRAM free: "));
+  Serial.println(getFreeSRAM());
+}
+
 
 //*****************************************************************
 /* Printing function */
@@ -174,9 +185,31 @@ void makeMeasures(Record& r) {
 /* Menu */
 
 void rotChange() {
-  Serial.println("rot change");
+  Serial.println(F("rot change"));
   Serial.println(rot.getValue());
   // (change action is implicit on most panels)
+}
+
+void shortClick() {
+  Serial.println(F("short click"));
+  /*
+  if (panel == 0) {
+    changePanel(10 * panel + rot.getValue());
+  } else {
+    // go back
+    changePanel(panel / 10);
+  }
+  Serial.println(panel);
+  */
+}
+
+void longClick() {
+  Serial.println(F("long click"));
+  /*
+  // return to previous menu
+  changePanel(panel / 10);
+  Serial.println(panel);
+  */
 }
 
 
@@ -195,13 +228,19 @@ void initializeTime() {
   ds3232.write(initTime);
   // alternative for passing directly a time_t
   // ds3232.set(makeTime(initTime));
-  Serial.println("Time initialized");
+  Serial.println(F("Time initialized"));
 }
 
 void setup()
 {
-  int line = 0; // Note: use at most 6 lines on screen
+  // Serial port
+  if (serialUsed) {
+    Serial.begin(serialBaudRate); 
+    Serial.println(F("Starting"));
+  }
+  reportSRAM();
 
+  int line = 0; // Note: use at most 6 lines on screen
 
   // LCD screen
   screen.setup();
@@ -209,21 +248,14 @@ void setup()
   screen.setString("Loading...", line++, 0);
   screen.updateDisplay(); 
 
-  // Serial port
-  if (serialUsed) {
-    Serial.begin(serialBaudRate); 
-    Serial.println("Starting");
-  }
-
   rot.setup();
   rot.onChange(rotChange);
 
-  /*/ Button
+  // Button
   button.setup();
   button.setLongPeriodDuration(buttonSensitivity);
   button.onUp(shortClick);
   button.onUpAfterLong(longClick);
-  */
 
   // DS3232 set initial time
   initializeTime();
@@ -237,7 +269,7 @@ void setup()
 
   // Ready for action
   if (serialUsed)
-    Serial.println("Ready");
+    Serial.println(F("Ready"));
   delay(1000);
 }
 
@@ -252,7 +284,7 @@ void loop()
   long dateNow = now(); 
   if (dateNow - dateLastRecord > 3) { // record every 3 seconds
     dateLastRecord = dateNow;
-    Serial.println("record");
+    Serial.println(F("record"));
 
     screenClear();
     screen.setString("record...", 0, 0);
@@ -272,11 +304,9 @@ void loop()
 
     // printHistory();
   }
-  Serial.println("display");
-  Serial.println(dateNow);
-  Serial.println(dateLastRecord);
+  Serial.println(F("wait"));
   // displayPanel();
-  // button.poll();
+  button.poll();
   rot.poll();
   delay(200);
 }

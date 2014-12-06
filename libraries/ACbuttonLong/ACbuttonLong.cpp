@@ -4,6 +4,10 @@
 
 #include "ACbuttonLong.h"
 
+#define DebugPrint(msg)
+// use command below for debugging
+// #define DebugPrint(msg) Serial.println(msg)
+
 ACbuttonLong::ACbuttonLong(int inputPin)
 {
   this->inputPin = inputPin;
@@ -18,26 +22,21 @@ void ACbuttonLong::setup() {
   pinMode(inputPin, INPUT);
 }
 
-void ACbuttonLong::debug(String msg) {
-  if (false)
-    Serial.println(msg);
-}
-
 void ACbuttonLong::poll() {
   byte st = digitalRead(inputPin);
   if (st == LOW) {
-    debug("low");
+    DebugPrint("low");
     if (dateLastDown == NEVER) {
-      debug("high to low");
+      DebugPrint("high to low");
       dateLastDown = millis();
       if (downHandler != NULL) {
         downHandler();
       }
     } 
   } else { // (st == HIGH)
-    debug("high");
+    DebugPrint("high");
     if (dateLastDown != NEVER) {
-      debug("low to high");
+      DebugPrint("low to high");
       long duration = millis() - dateLastDown;
       dateLastDown = NEVER;
       if (upAfterLongHandler != NULL 

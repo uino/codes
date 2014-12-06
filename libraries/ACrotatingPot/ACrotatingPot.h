@@ -106,7 +106,6 @@ class ACrotatingPot
     int ignoring; // 0 for no direction ignored, +1 or -1 for a particular direction
     
     int readSensor();
-    void debug();
     int getModuloValue(int value);
 };
 

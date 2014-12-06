@@ -10,6 +10,8 @@
 
 #include <avr/sleep.h>
 const byte LED = 6;
+const byte VccDS = 7;
+
 void wake ()
 {
   // cancel sleep as a precaution
@@ -54,8 +56,8 @@ void printTime(time_t t) {
 void setup()
 {
   digitalWrite (2, HIGH);
-  pinMode(6, OUTPUT);      //led de puissance et alim horloge
-  digitalWrite(6, HIGH);
+  pinMode(VccDS, OUTPUT);      //led de puissance et alim horloge
+    digitalWrite(VccDS, HIGH);
   
   Serial.begin(9600);   
   Serial.println("Starting up");
@@ -84,9 +86,13 @@ void setup()
 void loop(void)
 {
   
-  pinMode (LED, OUTPUT);
- digitalWrite(6, HIGH);
- 
+  pinMode (VccDS, OUTPUT);
+ digitalWrite(VccDS, HIGH);
+  
+   pinMode (LED, OUTPUT);
+ digitalWrite(LED, HIGH);
+
+  
   Serial.print("Date: ");
   printTime(ds3232.get());
 
@@ -101,9 +107,11 @@ void loop(void)
      
  delay(300);
 
-
- digitalWrite(6, LOW);
+ digitalWrite(LED, LOW);
   pinMode (LED, INPUT);
+
+ digitalWrite(VccDS, LOW);
+  pinMode (VccDS, INPUT);
   
   // disable ADC
   ADCSRA = 0;  

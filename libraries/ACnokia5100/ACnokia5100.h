@@ -95,6 +95,11 @@ class ACnokia5100
     void clearDisplay(boolean st);
 
     /** 
+      * Same as clearDisplay(WHITE);
+      */
+    void clearDisplay();
+
+    /** 
       * Set the state of a given pixel; true=Black and false=white
       */
     void setPixel(int x, int y, boolean st);

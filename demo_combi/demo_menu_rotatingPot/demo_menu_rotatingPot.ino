@@ -41,10 +41,9 @@ ACnokia5100 screen(3, 4, 5, 11, 13, 7);
 //*****************************************************************
 /* Menu definition */
 
-
 const int panelItems0_size = 16;
 const char panelItems0_0[] PROGMEM = "disp. submenu";
-const char panelItems0_1[] PROGMEM = "disp. curve";
+const char panelItems0_1[] PROGMEM = "disp. measures";
 const char panelItems0_2[] PROGMEM = "disp. all";
 const char panelItems0_3[] PROGMEM = "set a";
 const char panelItems0_4[] PROGMEM = "set b";
@@ -230,11 +229,6 @@ void loop()
   displayMenu();
   delay(50);
 }
-
-
-
-
-
 
 
 //*****************************************************************

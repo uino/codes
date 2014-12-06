@@ -384,6 +384,11 @@ void ACnokia5100::setBitmap(char* bitArray)
     displayMap[i] = bitArray[i];
 }
 
+void ACnokia5100::clearDisplay()
+{
+  clearDisplay(WHITE);
+}
+
 void ACnokia5100::clearDisplay(boolean bw)
 {
   for (int i=0; i<(LCD_WIDTH * LCD_HEIGHT / 8); i++)

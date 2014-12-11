@@ -1,5 +1,4 @@
 //////////////////////////////////////////////////////////////////
-//©2011 bildr
 //Released under the MIT License - Please reuse change and share
 //Simple code for the ADXL335, prints calculated orientation via serial
 //////////////////////////////////////////////////////////////////
@@ -47,13 +46,16 @@ void loop(){
   y = RAD_TO_DEG * (atan2(-xAng, -zAng) + PI);
   z = RAD_TO_DEG * (atan2(-yAng, -xAng) + PI);
 
-  //Output the caculations
+/*
   Serial.print("x: ");
   Serial.print(x);
   Serial.print(" | y: ");
   Serial.print(y);
   Serial.print(" | z: ");
   Serial.println(z);
+*/
+  float norm = x*x + y*y + z*z;
+  Serial.println(norm);
 
   delay(250);//just here to slow down the serial output - Easier to read
 }

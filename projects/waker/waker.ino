@@ -1,12 +1,71 @@
 /**
- * Demo for the DS3232RTC library. using alarm.
+ * ...
  * Code by Arthur Chargueraud.
  * This code is in the public domain.
  */
 
 #include <DS3232RTC.h> 
 #include <Time.h>
-#include<Wire.h>
+#include <Wire.h>
+
+const byte LED = 6;
+const byte BIG = 10;
+const byte BUZ = 12;
+const byte LIG = A3;
+
+void setup()
+{
+  Serial.begin(9600);   
+  Serial.println("Starting up");
+
+/*
+  delay(1000);
+
+  pinMode (LED, OUTPUT);
+  digitalWrite(LED, HIGH);
+
+  delay(1000);
+
+  digitalWrite(LED, LOW);
+
+  delay(1000);
+*/
+/* 
+
+  pinMode(9, OUTPUT); 
+  digitalWrite(9, LOW);
+  pinMode(10, OUTPUT); 
+  digitalWrite(10, LOW); */
+  /*
+  pinMode(BIG, OUTPUT); 
+  digitalWrite(BIG, HIGH);
+  delay(1000);
+  digitalWrite(BIG, LOW);
+*/
+/*
+  pinMode(BUZ, OUTPUT); 
+  digitalWrite(BUZ, HIGH);
+  delay(1000);
+  digitalWrite(BUZ, LOW);
+
+  delay(1000);
+*/
+  pinMode(LIG, INPUT); 
+
+}
+
+void loop() 
+{
+  int v = analogRead(LIG);
+  Serial.println(v);
+  delay(300);
+}
+
+
+/*
+// pin2 is interrupt 0
+// pin3 is interrupt 1
+
 
 #include <avr/sleep.h>
 const byte LED = 6;
@@ -17,7 +76,7 @@ void wake ()
   // cancel sleep as a precaution
   sleep_disable();
   // must do this as the pin will probably stay low for a while
-  detachInterrupt (0);
+  detachInterrupt (0); 
 }  // end of wake
 
   
@@ -141,3 +200,7 @@ void loop(void)
 
 
 }
+
+http://www.gammon.com.au/forum/?id=11497
+
+*/

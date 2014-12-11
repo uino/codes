@@ -8,7 +8,7 @@
  * a Nokia5100 display. 
  *
  */
-
+#include <SPI.h>
 #include <Time.h>
 #include <Wire.h>  
 #include <DS3232RTC.h> 
@@ -24,7 +24,7 @@
 // Log file parameters
 const boolean resetLogOnSetup = true; // TODO!!!
 const boolean showSDContent = true;
-char* filename = "logger.txt"; // name of log file (8+3 characters max)
+char filename[] = "logger.txt"; // name of log file (8+3 characters max)
 
 // ds3232 : for measuring clock and temperature
 DS3232RTC ds3232;
@@ -139,10 +139,9 @@ void resetLog() {
   writeLogHeader();
 }
 
-void writeRecordToFile(File file, Record& r) {
+void writeRecordToFile(File file, Record r) {
   int floatPrecision = 2;
-  time_t t = r.date;
-  writeTime(file, t);
+  writeTime(file, r.date);
   file.print("\t");
   file.print(r.date);
   file.print("\t");
@@ -152,7 +151,7 @@ void writeRecordToFile(File file, Record& r) {
   file.println("");
 }
 
-void writeRecordToLog(Record& r) {
+void writeRecordToLog(Record r) {
   File file = openLog(FILE_WRITE);
   if (! file)
     return;

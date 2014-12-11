@@ -1,18 +1,13 @@
 /**
- * Demo for the ACbuttonLong library.
+ * Demo for the SHT1x with Nokia screen.
  * Code by Arthur Chargueraud.
  * This code is in the public domain.
  *
  *
- * Show in real time the state of a collection of sensors on 
- * a Nokia5100 display. A button is used to go from a panel
- * to the next.
+ * Show in real time the state of a SHT1x sensor on
+ * a Nokia5100 display. 
  *
- * Supported sensors:
- *
- * - a temperature/humidity sensor (SHT1x sensor)
- * - a clock (DS3232)
- * - the duration since beginning
+ * A button can used to go from a panel to the next.
  *
  */
 
@@ -66,7 +61,7 @@ void makeMeasures(Record& r) {
 
 
 //*****************************************************************
-/* Serial function */
+/* Serial functions */
 
 void printTime(time_t t) {
   Serial.print(year(t)); 
@@ -95,7 +90,7 @@ void printMeasureOnSerial(Record& r) {
 
 
 //*****************************************************************
-/* Screen function */
+/* Screen functions */
 
 // TODO: move some of this to a library
 
@@ -212,12 +207,17 @@ void setup()
   // DS3232 set initial time
   initializeTime();
 
+  // Time.h library (adjust from ds3232 every 300 seconds)
+  setSyncProvider(ds3232.get); 
+  setSyncInterval(300); 
+
   // Button
   button.begin();
   button.onUp(shortClick);
 
   Serial.print("Starting"); 
 }
+
 
 
 //*****************************************************************

@@ -33,7 +33,7 @@ class ACbuttonLong
     /** 
       * To be called from the main setup before the device can be used.
       */
-    void setup();
+    void begin();
 
     /** 
       * Configure the threshold delay for clicks considered long,
@@ -48,7 +48,7 @@ class ACbuttonLong
     void poll();
 
     /** 
-      * Returns whether the button is currently down
+      * Returns whether the button was down at the last call to "poll"
       */
     boolean isDown();
 
@@ -81,7 +81,7 @@ class ACbuttonLong
     
     /** 
       * Register a function to be called when button goes up
-      * after being down for longer than longPeriodDuration
+      * after being down for longer than longPeriodDuration.
       * Provide NULL to unregister any previously-registered handler.
       */
      void onUpAfterLong(eventHandler handler);

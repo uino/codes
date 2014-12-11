@@ -27,7 +27,7 @@ void rotChange() {
 
 void setup() {
   Serial.begin(9600);
-  rot.setup();
+  rot.begin();
   rot.onChange(rotChange);
 }
 

@@ -462,7 +462,7 @@ void setup()
   int line = 0; // Note: use at most 6 lines on screen
 
   // LCD screen
-  screen.setup();
+  screen.begin();
   screen.updateDisplay(); 
   screen.setContrast(60);
   screen.setString("Loading...", line++, 0);
@@ -492,14 +492,14 @@ void setup()
   line++;
   
   /*/ Button
-  button.setup();
+  button.begin();
   button.setLongPeriodDuration(buttonSensitivity);
   button.onUp(shortClick);
   button.onUpAfterLong(longClick);
   */
 
   // Rotating potentiometer
-  rot.setup();
+  rot.begin();
   rot.onChange(rotChange);
 
   // DS3232 set initial time

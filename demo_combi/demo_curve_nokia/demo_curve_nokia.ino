@@ -21,7 +21,7 @@ void setup()
 {
   pinMode(potentiometerPin, INPUT);
 
-  screen.setup();
+  screen.begin();
   screen.updateDisplay(); 
   screen.setContrast(60); 
 }

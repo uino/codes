@@ -30,13 +30,14 @@
 #include <ACnokia5100.h>
 #include <ACrotatingPot.h>
 #include <ACbuttonLong.h>
+#include "defs.h"
 
 
 //*****************************************************************
 /* Configuration */
 
 // Log file parameters
-const boolean resetLogOnSetup = true;
+const boolean resetLogOnSetup = true; // TODO!!!
 const boolean showSDContent = true;
 char* filename = "logger.txt"; // name of log file (8+3 characters max)
 boolean SDused = false; // indicates whether SD card should/can be used
@@ -72,7 +73,7 @@ const int SDselectPin = 8;
 const int SDhardwareCSPin = 10;
 
 // Measure configuration
-const int nbMeasures = 3; // --currently, at most 5 measures
+// see nbMeasures in defs.h
 const char measureNames[nbMeasures][7] = { "humid.", "t_SHT1", "t_3232" }; // 6 chars exactly for each
 const int floatPrecision = 3; // nb digits after decimal point
 
@@ -80,11 +81,6 @@ const int floatPrecision = 3; // nb digits after decimal point
 
 //*****************************************************************
 /* Types of measures */
-
-typedef struct {
-  time_t date;
-  float values[nbMeasures];
-} Record;
 
 // current measure
 Record currentMeasure;
@@ -369,7 +365,6 @@ const char panelItems1_0[] PROGMEM = "set x-scale";
 const char panelItems1_1[] PROGMEM = "set y-scale";
 const char panelItems1_2[] PROGMEM = "set log params";
 
-typedef const char* fstring;
 
 const fstring panelItems[] PROGMEM = { 
   panelItems0_0, 
@@ -393,11 +388,6 @@ const fstring panelItems[] PROGMEM = {
   panelItems1_1, 
   panelItems1_2, 
   };
-
-typedef struct {
-  int nbItems;
-  const fstring* items;
-} PanelDescr;
 
 
 // TODO: could be in flash memory as well if needed
@@ -524,11 +514,12 @@ void setup()
   reportSRAM();
 
   // LCD screen
-  screen.setup();
+  screen.begin();
   screen.setContrast(60);
   screen.setString("Loading...", 0, 0);
   screen.updateDisplay(); 
 
+  // SD
   if (SDused) {
     pinMode(SDhardwareCSPin, OUTPUT); 
     if (! SD.begin(SDselectPin)) {
@@ -539,11 +530,11 @@ void setup()
   }
 
   // RotatingPot
-  rot.setup();
+  rot.begin();
   rot.onChange(rotChange);
 
   // Button
-  button.setup();
+  button.begin();
   button.setLongPeriodDuration(buttonSensitivity);
   button.onUp(shortClick);
   button.onUpAfterLong(longClick);

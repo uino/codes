@@ -63,7 +63,7 @@ void setup()
 {
   Serial.begin(9600);
 
-  screen.setup(); // This will setup our pins, and initialize the LCD
+  screen.begin(); // This will setup our pins, and initialize the LCD
   screen.updateDisplay(); // with displayMap untouched, blank screen
 
   screen.setContrast(60); // Good values range from 40-60

@@ -10,6 +10,8 @@
 #include <ACmemory.h>
 #include <avr/pgmspace.h>
 
+// typedef const char* fstring;
+
 const boolean useScreen = true;
 
 // uncomment below to see the difference
@@ -22,20 +24,15 @@ ACnokia5100 screen(3, 4, 5, 11, 13, 7);
 char test1[] = "here is a first test that contains a non-small number of characters so that it will count";
 
 // allocated in Flash (program space)
-typedef PROGMEM char prog_char;
-PROGMEM const prog_char test3[] = "here is a third test that contains a non-small number of characters so that it will count";
+const char test3[] PROGMEM = "here is a third test that contains a non-small number of characters so that it will count";
 
-typedef const byte PROGMEM prog_byte;
-const prog_byte testByte PROGMEM = 0x5f;
-const prog_byte testBytes[] PROGMEM = { 0x5f, 0x6f };
-
-
+const byte testByte PROGMEM = 0x5f;
+const byte testBytes[] PROGMEM = { 0x5f, 0x6f };
 
 const char MenuItem0[] PROGMEM = "Menu Item 0";
 const char MenuItem1[] PROGMEM = "Menu Item 1";
 const char MenuItem2[] PROGMEM = "Menu Item 2";
-typedef const char* fstring;
-fstring const MenuItemPointers[] PROGMEM = { MenuItem0, MenuItem1, MenuItem2 };
+const char* const MenuItemPointers[] PROGMEM = { MenuItem0, MenuItem1, MenuItem2 };
 
 
 void report() {
@@ -53,7 +50,7 @@ void other() {
 void menu() {
   char buffer[100];
   report();
-  fstring MenuItem = ((fstring) pgm_read_word(& MenuItemPointers[1]));
+  const char* MenuItem = ((const char*) pgm_read_word(& MenuItemPointers[1]));
   strcpy_P(buffer, MenuItem);
   Serial.println(buffer);
 }
@@ -82,7 +79,7 @@ void setup()
   menu();
 
   if (useScreen) {
-    screen.setup();
+    screen.begin();
     screen.setContrast(60);
     screen.clearDisplay(screen.WHITE);
     screen.setString("Loading...", 0, 0);
@@ -100,53 +97,6 @@ void loop()
 
 
 /*
-original progmem demo:
-
-
-
-#include <avr/pgmspace.h>
-
-typedef PROGMEM char prog_char;
-typedef const prog_char* prog_charp;
-const prog_char string_0[] PROGMEM = "String 0";   // "String 0" etc are strings to store - change to suit.
-const prog_char string_1[] PROGMEM = "String 1";
-const prog_char string_2[] PROGMEM = "String 2";
-const prog_char string_3[] PROGMEM = "String 3";
-const prog_char string_4[] PROGMEM = "String 4";
-const prog_char string_5[] PROGMEM = "String 5";
-
-
-// Then set up a table to refer to your strings.
-
-// alternative: const prog_char* string_table[] = 	   // change "string_table" name to suit
-
-const prog_charp string_table[] PROGMEM = 	   // change "string_table" name to suit
-{   
-  string_0,
-  string_1,
-  string_2,
-  string_3,
-  string_4,
-  string_5 };
-
-char buffer[30];    // make sure this is large enough for the largest string it must hold
-
-void setup()			  
-{
-  Serial.begin(9600);
-}
-
-void loop()			  
-{
-  for (int i = 0; i < 6; i++)
-  {
-    strcpy_P(buffer, (char*)pgm_read_word(&(string_table[i]))); 
-    // alternative:  strcpy_P(buffer, string_table[i]); // Necessary casts and dereferencing, just copy. 
-    Serial.println( buffer );
-    delay( 500 );
-  }
-}
-
 
 -------------------------------
 #define putstring(x) SerialPrint_P(PSTR(x))

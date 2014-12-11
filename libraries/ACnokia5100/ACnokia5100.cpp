@@ -458,7 +458,7 @@ void ACnokia5100::writeCmd(byte data_or_command, byte data)
 }
 
 //This sends the magical commands to the PCD8544
-void ACnokia5100::setup(void) 
+void ACnokia5100::begin() 
 {
   //Configure control pins
   pinMode(scePin, OUTPUT);

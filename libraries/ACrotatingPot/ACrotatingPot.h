@@ -40,7 +40,7 @@ class ACrotatingPot
     /** 
       * To be called from the main setup before the device can be used.
       */
-    void setup();
+    void begin();
 
     /** 
       * Call rotationInverted(true) to invert the direction of rotation

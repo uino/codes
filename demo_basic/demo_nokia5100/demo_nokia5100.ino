@@ -18,7 +18,7 @@ void setup()
 {
   Serial.begin(9600);
 
-  screen.setup();
+  screen.begin();
   screen.setContrast(60); // good values range from 40-60
   screen.clearDisplay(WHITE);
 

@@ -15,7 +15,7 @@ ACbuttonLong button(buttonPin);
 
 void setup()
 {
-  button.setup();
+  button.begin();
   button.setLongPeriodDuration(durationLong);
 
   Serial.begin(9600);   

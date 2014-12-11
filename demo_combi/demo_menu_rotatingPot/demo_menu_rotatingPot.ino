@@ -17,6 +17,7 @@
 #include <ACbuttonLong.h>
 #include <avr/pgmspace.h> 
 #include <ACmemory.h>
+#include "defs.h"
 
 
 //*****************************************************************
@@ -64,8 +65,6 @@ const char panelItems1_0[] PROGMEM = "set x-scale";
 const char panelItems1_1[] PROGMEM = "set y-scale";
 const char panelItems1_2[] PROGMEM = "set log params";
 
-typedef const char* fstring;
-
 const fstring panelItems[] PROGMEM = { 
   panelItems0_0, 
   panelItems0_1, 
@@ -88,12 +87,6 @@ const fstring panelItems[] PROGMEM = {
   panelItems1_1, 
   panelItems1_2, 
   };
-
-typedef struct {
-  int nbItems;
-  const fstring* items;
-} PanelDescr;
-
 
 // TODO: could be in flash memory as well if needed
 const int nbPanels = 2;
@@ -202,20 +195,20 @@ void setup()
   reportSRAM();
 
   // LCD screen
-  screen.setup();
+  screen.begin();
   screen.setContrast(60);
   screen.clearDisplay(WHITE);
   screen.setString("Loading...", 0, 0);
   screen.updateDisplay(); 
 
   // Button
-  button.setup();
+  button.begin();
   button.setLongPeriodDuration(buttonSensitivity);
   button.onUp(shortClick);
   button.onUpAfterLong(longClick);
 
   // Rotating potentiometer
-  rot.setup();
+  rot.begin();
 
   // Setup for the menu demo 
   enterPanel(0);

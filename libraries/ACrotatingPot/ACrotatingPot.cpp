@@ -24,7 +24,7 @@ ACrotatingPot::ACrotatingPot(int inputPin, int sensitivity, boolean inverted) : 
   rotationInverted(inverted);
 }
 
-void ACrotatingPot::setup() {
+void ACrotatingPot::begin() {
   pinMode(inputPin, INPUT);
   resetValue(0);
 }

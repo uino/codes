@@ -69,7 +69,7 @@ class ACnokia5100
     /** 
       * Must be called before using the screen
       */
-    void setup();
+    void begin();
 
     /** 
       * Must be called to propagate any change to the screen

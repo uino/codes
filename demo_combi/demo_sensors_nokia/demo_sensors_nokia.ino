@@ -4,32 +4,35 @@
  * This code is in the public domain.
  *
  *
- * Show in real time the state of a collection of sensors on a Nokia5100 display.
+ * Show in real time the state of a collection of sensors on 
+ * a Nokia5100 display. A button is used to go from a panel
+ * to the next.
  *
- * - a button (digital input)
- * - a potentiometer (analog input)
+ * Supported sensors:
+ *
  * - a temperature/humidity sensor (SHT1x sensor)
- * - a clock (DS1307)
+ * - a clock (DS3232)
  * - the duration since beginning
  *
  */
 
-
 #include <ACnokia5100.h>
-#include <RealTimeClockDS1307.h>
+#include <DS3232RTC.h> 
 #include <ACbuttonLong.h>
 #include <SHT1x.h>
+#include <avr/pgmspace.h>
+#include "defs.h"
 
+
+//*****************************************************************
+/* Configuration */
 
 // ACnokia5100 pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin
 // ACnokia5100 screen(3, 4, 5, 11, 13, 9);
-ACnokia5100 screen(3, 4, 5, 11, 13, 7);
+ACnokia5100 screen(3, 4, 5, 11, 13, 8);
 
-// Clock:
-RealTimeClockDS1307 clock;  
-
-// Potentiometer pin:
-int potentiometerPin = A0;
+// ds3232 : for measuring clock and temperature
+DS3232RTC ds3232;
 
 // ACbuttonLong pins: buttonPin
 ACbuttonLong button(2);
@@ -37,109 +40,198 @@ ACbuttonLong button(2);
 // SHT1x pins: dataPin, clockPin
 SHT1x sht1x(9, 10);
 
+// Menu panels
+const int nbPanels = 1;
+int currentPannel = 0;
+boolean needRefresh = true;
+
+// Current measure
+const int measurePeriod = 2000; // milliseconds
+long dateLastMeasure = 0;
+Record currentMeasure;
+
+
+//*****************************************************************
+/* Measure */
+
+void makeMeasures(Record& r) {
+  r.date = ds3232.get(); 
+  r.temperature = sht1x.readTemperatureC();
+  r.humidity = sht1x.readHumidity();
+}
+
+
+//*****************************************************************
+/* Serial function */
+
+void printTime(time_t t) {
+  Serial.print(year(t)); 
+  Serial.print('/');
+  Serial.print(month(t));
+  Serial.print('/');
+  Serial.print(day(t));
+  Serial.print(' ');
+  Serial.print(hour(t));
+  Serial.print(':');
+  Serial.print(minute(t));
+  Serial.print(':');
+  Serial.print(second(t));
+  Serial.println();
+}
+
+void printMeasureOnSerial(Record& r) {
+  Serial.println(F("---------------------------"));
+  printTime(r.date);
+  Serial.print(F("Temperature: "));
+  Serial.println(r.temperature, 2);  
+  Serial.print(F("Humidity: "));
+  Serial.println(r.humidity, 2);  
+  Serial.println(F("---------------------------"));
+}
+
+
+//*****************************************************************
+/* Screen function */
+
+// TODO: move some of this to a library
+
+const int screenNbRows = ACnokia5100::LCD_ROWS;
+const int screenNbCols = ACnokia5100::LCD_COLS; 
+const int bufferRowLength = 30; // = screenNbCols+1 (but using more characters for safety)
+
+// prints a two-digit nonnegative int into a given target string (of length >= 2)
+void timeItemIntoString(int v, char* str) {
+  str[0] = v / 10;
+  str[1] = v % 10;
+}
+
+// prints the date into a given target string
+// str needs to have a least 18 characters (15 if no year)
+void timeIntoString(time_t t, char* str, boolean showYear) {
+  char* pos = str;
+  if (showYear) {
+    timeItemIntoString(year(t), pos);
+    *pos = '/';
+    pos += 3;
+  }
+  timeItemIntoString(month(t), pos);
+  *pos = '/';
+  pos += 3;
+  timeItemIntoString(day(t), pos);
+  *pos = ' ';
+  pos += 3;
+  timeItemIntoString(hour(t), pos);
+  *pos = ':';
+  pos += 3;
+  timeItemIntoString(minute(t), pos);
+  *pos = ':';
+  pos += 3;
+  timeItemIntoString(second(t), pos);
+  pos += 2;
+  *pos = '\0';
+}
+
+void string_of_float(float value, int nbChars, int precision, char* target) {
+  dtostrf(value, nbChars, precision, target); 
+}
+
+void displayMeasures1(Record r) {
+  char buffer[bufferRowLength];
+  int floatNbChars = 5;
+  int floatPrecision = 2;
+  int line = 0;
+  screen.clearDisplay(); 
+
+  // date
+  timeIntoString(r.date, buffer, false);
+  screen.setString(buffer, line, 0);
+
+  // temperature
+  line++;
+  screen.setString("Temp.:", line, 0);
+  string_of_float(r.temperature, floatNbChars, floatPrecision, buffer);
+  screen.setString(buffer, line, 9);
+
+  // humidity
+  line++;
+  screen.setString("Humi.:", line, 0);
+  string_of_float(r.humidity, floatNbChars, floatPrecision, buffer);
+  screen.setString(buffer, line, 9);
+
+  screen.updateDisplay(); 
+}
+
+
+//*****************************************************************
+/* Menu */
+
+void shortClick() {
+  currentPannel = (currentPannel + 1) % nbPanels;
+  needRefresh = true;
+}
+
+void displayPanel() {
+  if (! needRefresh)
+    return;
+  if (currentPannel == 0) {
+    displayMeasures1(currentMeasure);
+  } // else .. // to handle more panels
+  needRefresh = false;
+}
+
+
+//*****************************************************************
+/* Setup */
+
+void initializeTime() {
+  tmElements_t initTime;
+  initTime.Second = 9;
+  initTime.Minute = 9;
+  initTime.Hour = 9;
+  initTime.Wday = 1; // day of week, sunday is day 1
+  initTime.Day = 11;
+  initTime.Month = 4;
+  initTime.Year = 44;
+  ds3232.write(initTime);
+}
 
 void setup()
 {
-  // Serial.begin(9600); 
+  // Serial
+  Serial.begin(9600); 
 
-  pinMode(potentiometerPin, INPUT);
-
-  screen.setup();
+  // Screen
+  screen.begin();
   screen.updateDisplay(); 
   screen.setContrast(60); 
 
-  // Serial.println("starting"); 
+  // DS3232 set initial time
+  initializeTime();
+
+  // Button
+  button.begin();
+  button.onUp(shortClick);
+
+  Serial.print("Starting"); 
 }
 
-String String_of_float(float value, int nbChars, int precision) {
-  char chars[] = "                           ";
-  dtostrf(value, nbChars, precision, chars); 
-  return String(chars);
-}
 
-int delay_between_SHT1x_measures = 2000; // milliseconds
-long lastSHT1x_measure = - delay_between_SHT1x_measures;
-float temperature = 0;
-float humidity = 0;
-
-// http://www.arduino-projects4u.com/sht11/
+//*****************************************************************
+/* Main */
 
 void loop()
 {
-  // periodic actions
-  button.poll();
-
-  // read sensors
-
-  clock.readClock();
-  int year = clock.getYear();
-  int month = clock.getMonth();
-  int day = clock.getDay();
-  int hour = clock.getHours();
-  int minute = clock.getMinutes();
-  int second = clock.getSeconds();
-  String dateStr = String(year) + "/" + String(month) + "/" + String(day);
-  String clockStr = String(hour) + ":" + String(minute) + ":" + String(second);
-
-  String buttonStr = (button.isDown()) ? "down" : "up";
-
-  int potentiometerValue = analogRead(potentiometerPin);    
-  String potentiometerStr = String(potentiometerValue);
-
-  int date = millis();
-  if (date - lastSHT1x_measure >= delay_between_SHT1x_measures) {
-    lastSHT1x_measure = date;
-    temperature = sht1x.readTemperatureC();
-    humidity = sht1x.readHumidity();
+  long now = millis();
+  if (dateLastMeasure - now > measurePeriod) {
+    dateLastMeasure = now;
+    makeMeasures(currentMeasure);
+    printMeasureOnSerial(currentMeasure);
+    needRefresh = true;
   }
 
-  // print on 7 characters, with 2 digit after decimal points
-  String temperatureStr = String_of_float(temperature, 7, 2);
-  String humidityStr = String_of_float(humidity, 7, 2);
-
-  // print measures
-
-  screen.clearDisplay(screen.WHITE);
-  int line = 0;
-  screen.setString(dateStr, line++, 0);
-  screen.setString(clockStr, line++, 0);
-  screen.setString("button:" + buttonStr, line++, 0);
-  screen.setString("poten.:" + potentiometerStr, line++, 0);
-  screen.setString("temp. :" + temperatureStr, line++, 0);
-  screen.setString("humid.:" + humidityStr, line++, 0);
-  screen.updateDisplay();
-
-  delay(100);
-}
-
-
-
-/*
-// Simplified version for button
-
-void loop()
-{
+  // periodic actions
   button.poll();
-  String buttonStr = (button.isDown()) ? "down" : "up";
-  screen.clearDisplay(screen.WHITE);
-  screen.setString("button:" + buttonStr, 1, 0);
-  screen.updateDisplay();
-  delay(500);
+  delay(50);
 }
-
-// Simplified version for potentiometer
-
-void loop()
-{
-  int potentiometerValue = analogRead(potentiometerPin);    
-  String potentiometerStr = String(potentiometerValue);
-  screen.clearDisplay(screen.WHITE);
-  screen.setString("poten.:" + potentiometerStr, 0, 0);
-  screen.updateDisplay();
-  delay(100);
-}
-
-
-*/
 
 

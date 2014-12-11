@@ -28,7 +28,7 @@ void setup()
   report();
 
 #ifdef COUNT_SCREEN
-  screen.setup();
+  screen.begin();
   screen.setContrast(60);
   screen.clearDisplay(screen.WHITE);
   screen.setString("Loading...", 0, 0);

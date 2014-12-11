@@ -30,7 +30,7 @@ class ACclockDS1307
     /** 
       * This function must be called to initialize the device.
       */
-    void setup();
+    void begin();
 
     /** 
       * Sets the date and time on the ds1307, 

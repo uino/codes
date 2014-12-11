@@ -8,7 +8,7 @@ ACclockDS1307::ACclockDS1307()
 {
 }
 
-void ACclockDS1307::setup() {
+void ACclockDS1307::begin() {
   Wire.begin();
 }
 

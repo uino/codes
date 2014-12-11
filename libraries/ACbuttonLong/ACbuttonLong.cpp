@@ -18,7 +18,7 @@ ACbuttonLong::ACbuttonLong(int inputPin)
   upAfterLongHandler = NULL;
 }
 
-void ACbuttonLong::setup() {
+void ACbuttonLong::begin() {
   pinMode(inputPin, INPUT);
 }
 

@@ -16,16 +16,20 @@
  *
  */
 
+#include <SPI.h>
+#include <Wire.h>
+#include <SHT1x.h>
+#include <Time.h>
 #include <ACnokia5100.h>
 #include <DS3232RTC.h> 
 #include <ACbuttonLong.h>
-#include <SHT1x.h>
 #include <avr/pgmspace.h>
 #include "defs.h"
 
 
 //*****************************************************************
 /* Configuration */
+
 
 // ACnokia5100 pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin
 // ACnokia5100 screen(3, 4, 5, 11, 13, 9);
@@ -48,7 +52,7 @@ boolean needRefresh = true;
 // Current measure
 const int measurePeriod = 2000; // milliseconds
 long dateLastMeasure = 0;
-Record currentMeasure;
+Record currentMeasure;   //includ def.h
 
 
 //*****************************************************************
@@ -101,8 +105,8 @@ const int bufferRowLength = 30; // = screenNbCols+1 (but using more characters f
 
 // prints a two-digit nonnegative int into a given target string (of length >= 2)
 void timeItemIntoString(int v, char* str) {
-  str[0] = v / 10;
-  str[1] = v % 10;
+  str[0] = '0' + v / 10;
+  str[1] = '0' + v % 10;
 }
 
 // prints the date into a given target string
@@ -231,6 +235,7 @@ void loop()
 
   // periodic actions
   button.poll();
+ displayPanel();
   delay(50);
 }
 

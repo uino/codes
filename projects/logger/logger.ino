@@ -324,17 +324,15 @@ void writeRecordToLog(Record& r) {
 
 //*****************************************************************
 /* Performing measures */
-
 // Remarks:
 // - date is read from the ds3232 time (without interpolation from "millis")
-// - the ds3232 returns an int equal to 4 times the temperature.
 
 void makeMeasures(Record& r) {
   r.date = ds3232.get(); 
   float* v = r.values;
   v[0] = sht1x.readHumidity();
   v[1] = sht1x.readTemperatureC();
-  v[2] = ds3232.temperature() / 4.0; 
+  v[2] = ds3232.temperature() / 4.0; // - the ds3232 returns an int equal to 4 times the temperature.
 }
 
 

@@ -17,7 +17,7 @@ void wake ()
   // cancel sleep as a precaution
   sleep_disable();
   // must do this as the pin will probably stay low for a while
-  detachInterrupt (0);
+  detachInterrupt (0);  //pin2
 }  // end of wake
 
   

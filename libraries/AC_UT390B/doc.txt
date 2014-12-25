@@ -1,0 +1,178 @@
+http://blog.qartis.com/arduino-laser-distance-meter/
+
+Decoding the serial output
+
+This unit's serial port runs at 115200 baud (8N1). On bootup, it outputs the following text with \r\n line endings:
+
+1
+ldpara:395
+2
+curent ver:420411
+3
+Year:Jan 21 2013 Time:13:53:10
+4
+ldpara:395
+5
+Iint OK
+6
+APDMIN=136 APDMAX=167
+7
+BIASVOLMIN=2307 BIASVOLMAX =1718
+Notice "APDMIN" and "APDMAX", which are likely calibration values for the avalanche photodiode used to detect the reflected laser beam. A few sloppy printfs as well.. To turn the unit on, connect the ON signal to GND for about 300ms. Once it's on, the ON signal is also used to take a measurement. After a measurement is taken, the unit outputs the following:
+
+1
+Dist: 2827,curtemp =21
+2
+V2.0
+3
+nDist: 2827,tempDv=0
+The Dist and nDist values are in millimeters. As far as I can tell, the two measurements are always identical. If there's a measurement error (Error 154, out of range or sensor error) the unit will output:
+
+1
+OUT_RAN dist = 30
+If the unit can't determine the average distance (Error 160, sensor shaking too much or Error 155, signal too weak) the unit will output one of the following lines:
+
+1
+MEDIUM2 AND THIN NOT MATCH
+2
+MEDIUM1 AND MEDIUM2 NOT MATCH
+3
+THICK AND MEDIUM1 NOT MATCH
+4
+MEDIUM1 AND MEDIUM2 NOT MATCH
+When you turn it off, it outputs:
+
+1
+SysPowerOff!
+2
+WriteTestData TRUE
+Serial input?
+
+I'd like to find a way to control the unit over serial. So far all I've found is that sending 0x23 ('#') or 0x73 ('r') will cause the unit to power down. It seems to ignore every other byte, as well as some common english words and modbus commands. If you manage to find any other byte sequences, email me or leave a comment below. If you liked this article, you might also like DORI, my robot project. DORI uses a slightly different laser distance measurement strategy. You can learn more on the project homepage and in my thesis.
+
+
+
+===========================================================
+
+http://blog.qartis.com/ut390b-error-numbers/
+
+
+UT390B error numbers
+
+I've gotten a few emails asking for help about the Uni-T UT390B laser distance meter because the operating manual is written in Chinese. I've created a list of the unit's error messages in case it's useful for anyone developing with this device.
+
+enum {
+    ERR_BATTERY_LOW = 101,
+    ERR_CALCULATION = 104,
+    ERR_HIGH_TEMP = 152,
+    ERR_LOW_TEMP = 153,
+    ERR_OUT_OF_RANGE = 154,
+    ERR_WEAK_SIGNAL = 155,
+    ERR_STRONG_SIGNAL = 156,
+    ERR_BACKGROUND_ILLUM = 157,
+    ERR_DEVICE_SHAKING = 160
+};
+
+
+===========================================================
+
+http://blog.qartis.com/parsing-laser-distance-meter-serial-output/
+
+
+===========================================================
+
+http://blog.qartis.com/laser-distance-meter-update-serial-commands-timing-measurements/
+
+Laser distance meter update: serial commands, timing measurements
+
+In my first post about the laser distance meter I asked for help finding usable commands to control the unit, and within days reader speleomaniac had found a command format and several commands. Let's have a look! But first I'll explain some timing measurements that people have been emailing about.
+
+Timing measurements
+
+The unit is able to take just over 1 measurement per second using the single-shot *00004# command on a flat surface (see below). However there is also a rapid-fire mode which can be activated by holding the ON button for about 1000mS. So far I haven't found a serial command to begin rapid-fire mode (edit: the command is *00084553#, scroll down for details). In rapid-fire mode, the unit takes 100 measurements in quick bursts, and it's capable of scanning just over 3 measurements per second off a smooth, reflective surface. When the laser beam is scanned across soft or bumpy surfaces the measurements take longer, and when the laser beam is out of range or shaky, the unit will output an error and continue until it has attempted all 100 measurements. The output for each failed measurement is:
+
+OUT_RAN dist = 18
+OUT_RAN dist = 31
+OUT_RAN dist = 30
+[...]
+I've uploaded a text file containing raw sensor measurements, with timestamps added at the beginning of each line to show the speed. It can be downloaded here: ut390b_laser_timing.txt.
+
+Commands
+
+Command *00001#
+
+Outputs the message
+
+pMsgWrite TRUE 
+pInitDataWrite TRUE
+Command *00002#
+
+Takes 3 readings, screen shows "Er". Outputs the 3 measurements in array notation (distance is 103.7mm):
+
+u32Dist[0]=1037  u32Dist[1] =1037 u32Dist[2] =1037
+u32temp =0
+*000720150000000042#
+See below for an explanation of the last line ending in 42#.
+
+Command *00004#
+
+Takes 1 measurement, screen shows the measurement. Outputs the measurement like this: (distance is 112.7mm)
+
+Dist: 1127,curtemp =22 
+
+V2.0 
+nDist: 1127,tempDv=0
+
+*0006400000112784#
+See below for an explanation of the last line ending in 84#.
+
+Command *00005#
+
+Memory dump. I'm not sure why, but some measurements are recorded to the unit's nonvolatile memory. Not all measurements are stored -- measurements that will be stored will display the following additional message:
+
+Dist: 3122,curtemp =21 
+
+V2.0 
+nDist: 3122,tempDv=0
+
+WriteTestData TRUE
+The memory dump command outputs these recorded measurements in the following format:
+
+*0024500001000001850000018700000000000000000000000061#
+These fields are, in order:
+
+Command type (memory dump)
+Counter (starts at 00001 and counts up)
+First measurement
+Second measurement
+Third measurement
+Fourth measurement
+Fifth measurement
+Checksum
+Not all measurements will be recorded on a given line (I'm not sure why). The checksum format is as follows: interpret the data bytes between * and # as 2-digit base-10 integers, and add them together (skipping the checksum). Mod the resulting value by 100. For example:
+
+00+24+50+00+01+00+00+01+85+00+00+00+00
+     +00+00+00+00+00+00+00+00+00+00+00+00 = 161
+and
+161 % 100 = 61
+Which gives the resulting checksum of 61. This can be used to verify the serial output of the unit.
+
+Command *100515#
+
+Turns on laser light (seems to freeze the screen, and the buttons no longer work).
+
+Command *100111#
+
+Some kind of memory dump. I've seen between 1-3 lines of output for this command, depending on how many times the laser has been used. Typical output looks like this:
+
+*00261100000000000411000000000000000150119723520395002812#
+curent ver:420411
+Where the bold values constantly fluctuate up and down (the 97 sometimes becomes 96, etc).
+
+Command *00084553#
+
+Begin rapidfire measurement.
+
+Command #
+
+Repeat previous command.

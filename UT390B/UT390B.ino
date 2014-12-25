@@ -9,24 +9,6 @@ int buf[64];
 int rc=0;
 
 
-void setup()
-{
-    Serial.begin(115200);
-    Serial1.begin(115200);
-    //Serial.println("Start...");
-}
-
-void loop()
-{
-  static unsigned long t = 0;
-  if (millis() > (t + 2000)){ // Таймер запуска при отсутствии данных от датчика
-    Serial1.write("*00084553#");
-    t = millis();
-  }
-  getdist();
-  if (recdata) t = millis(); // сброс таймера при получении данных от датчика
-}
-
 
 int getdist(){
   int litera;
@@ -105,3 +87,64 @@ int getdist(){
     }
   }
 }
+
+
+void setup()
+{
+    Serial.begin(115200);
+    Serial1.begin(115200);
+    //Serial.println("Start...");
+}
+
+void loop()
+{
+  static unsigned long t = 0;
+  if (millis() > (t + 2000)){ // Таймер запуска при отсутствии данных от датчика
+    Serial1.write("*00084553#");
+    t = millis();
+  }
+  getdist();
+  if (recdata) t = millis(); // сброс таймера при получении данных от датчика
+}
+
+
+/*
+Se il est adopté par le signe "*"
+puis réglez le signe du début du paquet
+Se il est adopté, le "#"
+puis réglez le signe de la fin de l'emballage ...
+et mettre un signe pour obtenir la gestion de données (reset) la minuterie et plus progiciel de traitement
+Se il est un signe de début du paquet, la longueur du paquet, et la valeur numérique raisonnablement Litera est ASCII, alors ...
+  Transformer ASCII de comprendre ...
+  et ajouter à la gamme.
+Cette variable se emploiera à séparer le paquet dans les catégories 2 chiffres
+Cette variable sera considérée comme décharges
+Cette variable prendra les valeurs de bits
+Ce est la somme de tous les chiffres sauf le dernier
+Cette valeur est la dernière catégorie (10), qui définit la somme de contrôle
+La valeur du compteur interne dans la cinquième chiffres
+Cette distance, qui nous calculons
+Ici, nous avons le premier caractère de chaque nouveau chiffre est multiplié par 10 ....
+... Et ici, nous ajoutons la deuxième valeur.
+checksum ici podschitvaem
+déclarations concernant la lutte
+ici croire distantsiyayu --------- |
+                                   |
+-------------------------------------- |
+ici tirer la somme de contrôle du paquet
+Si la somme de contrôle est supérieur à 99, puis coupez l'excès, ne laissant que les deux derniers chiffres
+Si la quantité de bits (sauf le dernier) est égale à la somme de contrôle (le dernier chiffre), puis ...
+         Serial.print ("");
+         Serial.print (somme);
+         Serial.print ("");
+         Serial.print (src);
+Fournit en sortie les données du compteur interne
+Dériver la distance et ...
+Si le compteur a atteint la limite, le ...
+donner la commande pour démarrer un nouveau cycle
+Serial.println ("Démarrer ...");
+  Lancer minuterie lorsque aucune donnée provenant du capteur
+  réinitialiser la minuterie lorsqu'elle reçoit des données provenant du capteur
+
+
+*/

@@ -82,6 +82,7 @@ class AC_UT390B
     typedef enum { IDLE, ACQUIRE, READY, ERROR } Status;
     Status status;
     float measure;
+    long dateRequest;
     static const int bufferMaxLength = 16;
     char buffer[bufferMaxLength+1];
     int bufferPos;

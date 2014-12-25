@@ -34,6 +34,9 @@ void AC_UT390B::emptySerial() {
 }
 
 void AC_UT390B::requestMeasure() {
+  if (timeout != 0) {
+    dateRequest = millis();
+  }
   emptySerial();
   bufferPos = 0;
   parsingData = false;
@@ -73,6 +76,9 @@ void AC_UT390B::processMeasure() {
     if (parsingData == true && bufferPos < bufferMaxLength && c >= '0') { 
       buffer[bufferPos++] = c;
     }
+  }
+  if ((timeout != 0) && (millis() - dateRequest > timeout)) {
+    status = ERROR;
   }
 }
 

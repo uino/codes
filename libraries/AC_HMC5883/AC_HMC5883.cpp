@@ -117,6 +117,11 @@ float AC_HMC5883::getNorm() {
   return sqrt(m.x * m.x + m.y * m.y + m.z * m.z);
 }
 
+float AC_HMC5883::getNormXY() {
+  Vector& m = measure;
+  return sqrt(m.x * m.x + m.y * m.y);
+}
+
 float AC_HMC5883::getHeading() {
   float heading = atan2(measure.y, measure.x); // in range (-PI,+PI]
   heading += declination;

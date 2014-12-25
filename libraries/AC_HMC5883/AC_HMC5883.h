@@ -88,6 +88,12 @@ class AC_HMC5883
     float getNorm();
 
     /** 
+      * Get the norm of the magnetic field ignoring the Z-axis component,
+      * that is, only the norm of the vector projected in the XY plane.
+      */
+    float getNormXY();
+
+    /** 
       * Get the heading angle, and return result in radians,
       * assuming the z-axis to be perfectly vertical.
       * Returns a value in the range [0,2*PI).

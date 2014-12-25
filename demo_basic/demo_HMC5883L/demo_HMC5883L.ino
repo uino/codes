@@ -22,7 +22,8 @@ void setup()
     pinMode(4, OUTPUT);
     pinMode(5, OUTPUT);
     digitalWrite(3, LOW);
-    digitalWrite(5, HIGH);
+    digitalWrite(4, HIGH);
+    digitalWrite(5, LOW);
   }
 
   Serial.begin(9600);   
@@ -36,7 +37,7 @@ void displayFloat(float value) {
   // using: void dtostrf(float value, int nbChars, int precision, char* target) 
   const int nbDigits = 6;
   char buffer[nbDigits];
-  dtostrf(value, 7, 5, buffer);
+  dtostrf(value, 6, 1, buffer);
   Serial.print(buffer);
 }
 
@@ -45,9 +46,12 @@ void loop()
   compass.makeMeasure();
   float heading = compass.getHeadingDegrees();
   float norm = compass.getNorm() * 100.; // in microtesla
+  float normXY = compass.getNormXY() * 100.; // in microtesla
 
   Serial.print("Heading: ");
   displayFloat(heading);
+  Serial.print("\t\tNormXY: "); 
+  displayFloat(normXY); 
   Serial.print("\t\tNorm: "); 
   displayFloat(norm); 
   Serial.println("");

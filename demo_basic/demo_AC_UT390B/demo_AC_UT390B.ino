@@ -3,10 +3,16 @@
  * Code by Arthur Chargueraud.
  * This code is in the public domain.
  *
- * The demo reports measures on every click of a button.
+ * The demo requires:
+ * - a computer connected on Serial
+ * - a UT390B telemeter connected on Serial1
+ * - a button for launching measures.
+ * 
+ * It reports a measure when the button is clicked.
+ * It reports failed measurements.
  *
- * Assumes Serial to be connected to a computer for reporting values.
- * Assumes Serial1 to be connected to the telemeter.
+ * The demo can be easily adapted to work without a computer
+ * and/or without a button.
  *
  */
 
@@ -17,55 +23,13 @@ const int buttonPin = 6;
 
 ACbuttonLong button(buttonPin);
 
+AC_UT390B telemeter(&Serial1);
 
-typedef enum { IDLE, ACQUIRE, READY, ERROR } Status;
-Status status = IDLE;
+boolean ongoingMeasure = false;
 
-float measureValue = 0;
-const int bufferMaxLength = 16;
-char buffer[bufferMaxLength+1];
-int bufferPos = 0;
-boolean parsingData = false;
-
-void analyseBuffer() {
-  buffer[bufferPos] = '\0';
-  // for debug: Serial.println(buffer);
-  int mul = 1;
-  long res = 0;
-  // read the value between digits at index 9 and 13
-  for (int i = 13; i >= 9; i--) {
-    res += mul * (buffer[i] - '0');
-    mul *= 10;
-  }
-  measureValue = res / 1000.0;
-  status = READY;
-}
-
-void measureProgress() {
-  while (Serial1.available() > 0) {
-    char c = (char) Serial1.read();
-    // for debugging: Serial.print(c);
-    if (c == '*') { // data start
-      parsingData = true;
-      bufferPos = 0;
-    }
-    if (c == '#') { // data end
-      parsingData = false;
-      if (bufferPos == bufferMaxLength) { // expecting a 16-char message
-        analyseBuffer();
-      }
-    }
-    if (parsingData == true && bufferPos < bufferMaxLength && c >= '0') { 
-      buffer[bufferPos++] = c;
-    }
-  }
-}
-
-void measureRequest() {
-  status = ACQUIRE;
-  bufferPos = 0;
-  parsingData = false;
-  Serial1.write("*00004#");
+void queryMeasure() {
+  ongoingMeasure = true;
+  telemeter.requestMeasure();
 }
 
 void setup()
@@ -73,49 +37,31 @@ void setup()
   Serial.begin(9600);   
   Serial.println("Starting up");
 
-  // telemeter.begin();
-  Serial1.begin(115200);
-  Serial1.write("*100515#");
+  telemeter.begin();
+  telemeter.setLaserVisible(true);
   Serial.println("Laser on");
 
   button.begin();
-  button.onUp(measureRequest);
+  button.onUp(queryMeasure);
 }
 
 void loop()
 {
   button.poll();
 
-  if (status == ACQUIRE) {
-    measureProgress();
-  }
-  if (status == ERROR) {
-    Serial.println("Measure: error");
-    status = IDLE;
-//status = ACQUIRE;
-  }
-  if (status == READY) {
-    Serial.print("Measure: ");
-    Serial.println(measureValue, 3);
-//Serial.println(buffer);
-    status = IDLE;
-//status = ACQUIRE;
+  if (ongoingMeasure) {
+    telemeter.processMeasure();
+    if (telemeter.isMeasureComplete()) {
+       Serial.print("Measure: ");
+      if (telemeter.isMeasureSuccessful()) {
+        float value = telemeter.getMeasure();
+        Serial.println(value, 3);
+      } else {
+        Serial.println("error");
+      }
+      ongoingMeasure = false;
+    }
   }
 
   delay(10);
 }
-
-
-
-
-/*
-void readAndReport() {   
-  while (Serial1.available() > 0) {
-    byte c = Serial1.read();
-    Serial.write(c);
-  }
-}
-
-// AC_UT390B telemeter(&Serial1);
-
-*/

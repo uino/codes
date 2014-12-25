@@ -18,8 +18,8 @@ ACbuttonLong::ACbuttonLong(int inputPin)
   upLongHandler = NULL;
 }
 
-void ACbuttonLong::setLongPeriodDuration(long longPeriodInMillis) {
-  longPeriodDuration = longPeriodInMillis;
+void ACbuttonLong::setLongPeriodDuration(long longPeriodDuration) {
+  this->longPeriodDuration = longPeriodDuration;
 }
 
 void ACbuttonLong::begin() {

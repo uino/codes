@@ -41,7 +41,7 @@ class ACbuttonLong
       * clicks considered to be long. Value should be expressed in milliseconds. 
       * Default value is 200ms.
       */
-    void setLongPeriodDuration(long longPeriodInMillis);
+    void setLongPeriodDuration(long longPeriodDuration);
 
     /** 
       * This function must be called very frequently for checking

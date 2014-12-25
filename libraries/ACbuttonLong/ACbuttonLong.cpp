@@ -5,17 +5,21 @@
 #include "ACbuttonLong.h"
 
 #define DebugPrint(msg)
-// use command below for debugging
-// #define DebugPrint(msg) Serial.println(msg)
 
 ACbuttonLong::ACbuttonLong(int inputPin)
 {
   this->inputPin = inputPin;
   longPeriodDuration = 200;
-  dateLastDown = NEVER;
+  downSinceValue = NEVER;
+  downDurationValue = NEVER;
+  status = UP;
   downHandler = NULL;
   upHandler = NULL;
-  upAfterLongHandler = NULL;
+  upLongHandler = NULL;
+}
+
+void ACbuttonLong::setLongPeriodDuration(long longPeriodInMillis) {
+  longPeriodDuration = longPeriodInMillis;
 }
 
 void ACbuttonLong::begin() {
@@ -23,25 +27,29 @@ void ACbuttonLong::begin() {
 }
 
 void ACbuttonLong::poll() {
-  byte st = digitalRead(inputPin);
-  if (st == LOW) {
-    DebugPrint("low");
-    if (dateLastDown == NEVER) {
-      DebugPrint("high to low");
-      dateLastDown = millis();
+  boolean isDown = (digitalRead(inputPin) == LOW);
+  if (isDown) { 
+    if (status == UP) { // from up to down
+      status = DOWN;
+      downSinceValue = millis();
       if (downHandler != NULL) {
         downHandler();
       }
-    } 
-  } else { // (st == HIGH)
-    DebugPrint("high");
-    if (dateLastDown != NEVER) {
-      DebugPrint("low to high");
-      long duration = millis() - dateLastDown;
-      dateLastDown = NEVER;
-      if (upAfterLongHandler != NULL 
-          && duration > longPeriodDuration) {
-        upAfterLongHandler();
+    } else if (status != LONGDOWN && downLongHandler != NULL) {
+      long downDuration = millis() - downSinceValue;
+      if (downDuration >= longPeriodDuration) {
+        status = LONGDOWN;
+        downDurationValue = downDuration;
+        downLongHandler();
+      }
+    }
+  } else {
+    if (status != UP) { // from down or longdown to up
+      status = UP;
+      downDurationValue = millis() - downSinceValue;
+      if (upLongHandler != NULL 
+          && downDurationValue >= longPeriodDuration) {
+        upLongHandler();
       } else if (upHandler != NULL) {
         upHandler();
       }
@@ -49,31 +57,34 @@ void ACbuttonLong::poll() {
   }
 }
 
-void ACbuttonLong::setLongPeriodDuration(long longPeriodInMillis) {
-  longPeriodDuration = longPeriodInMillis;
-}
-
 boolean ACbuttonLong::ACbuttonLong::isDown() {
-  return dateLastDown != NEVER;
+  return (status != UP);
 }
 
 long ACbuttonLong::downSince() {
-  return dateLastDown;
+  return downSinceValue;
 }
 
 long ACbuttonLong::downDuration() {
-  return millis() - dateLastDown;
+  if (status != UP) {
+    return millis() - downSinceValue;
+  }
+  return downDurationValue;
 }
 
 void ACbuttonLong::onDown(eventHandler handler) {
   downHandler = handler;
 }
 
+void ACbuttonLong::onDownLong(eventHandler handler) {
+  downLongHandler = handler;
+}
+
 void ACbuttonLong::onUp(eventHandler handler) {
   upHandler = handler;
 }
 
-void ACbuttonLong::onUpAfterLong(eventHandler handler) {
-  upAfterLongHandler = handler;
+void ACbuttonLong::onUpLong(eventHandler handler) {
+  upLongHandler = handler;
 }
 

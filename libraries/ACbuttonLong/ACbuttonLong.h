@@ -11,6 +11,7 @@
  * or one can attach a callback function to handle events,
  * and call a polling function on a regular basis.
  *
+ * // TODO: add support for double clicks
  */
 
 #ifndef ACbuttonLong_h
@@ -36,8 +37,9 @@ class ACbuttonLong
     void begin();
 
     /** 
-      * Configure the threshold delay for clicks considered long,
-      * to be expressed in milliseconds. Default value is 200ms.
+      * Configure the "long period duration", i.e. the threshold delay for 
+      * clicks considered to be long. Value should be expressed in milliseconds. 
+      * Default value is 200ms.
       */
     void setLongPeriodDuration(long longPeriodInMillis);
 
@@ -53,14 +55,16 @@ class ACbuttonLong
     boolean isDown();
 
     /** 
-      * Returns the date (as returned by millis()) since which the 
-      * button is down, or NEVER if it is not down.
+      * Returns the date (as returned by millis()) at which the 
+      * button last went from up to down.
+      * Returns NEVER if the button was never down.
       */
     long downSince();
 
     /** 
       * Returns the number of milliseconds for which the button has
-      * been down, or NEVER if it is not down.
+      * been down during the last phase when it was down.
+      * Return NEVER if it has never been down.
       */
     long downDuration();
 
@@ -71,28 +75,40 @@ class ACbuttonLong
     void onDown(eventHandler handler);
 
     /** 
+      * Register a function to be called when button has been down
+      * for a period of time longer than the "long period duration".
+      * Provide NULL to unregister any previously-registered handler.
+      */
+    void onDownLong(eventHandler handler);
+
+    /** 
       * Register a function to be called when button goes up,
       * except if the button has been down for longer than 
       * longPeriodDuration and a function was registered using
-      * onUpAfterLong.
+      * onUpLong.
       * Provide NULL to unregister any previously-registered handler.
       */
      void onUp(eventHandler handler);
     
     /** 
       * Register a function to be called when button goes up
-      * after being down for longer than longPeriodDuration.
+      * after being down for longer than the "long period duration".
       * Provide NULL to unregister any previously-registered handler.
       */
-     void onUpAfterLong(eventHandler handler);
-
+     void onUpLong(eventHandler handler);
+   
   private:
+    typedef enum { UP, DOWN, LONGDOWN } Status;
+
     int inputPin;
     int longPeriodDuration;
-    long dateLastDown;
+    Status status;
+    long downSinceValue;
+    long downDurationValue;
     eventHandler downHandler;
+    eventHandler downLongHandler;
     eventHandler upHandler;
-    eventHandler upAfterLongHandler;
+    eventHandler upLongHandler;
 };
 
 #endif

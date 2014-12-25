@@ -495,7 +495,7 @@ void setup()
   button.begin();
   button.setLongPeriodDuration(buttonSensitivity);
   button.onUp(shortClick);
-  button.onUpAfterLong(longClick);
+  button.onUpLong(longClick);
   */
 
   // Rotating potentiometer

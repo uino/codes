@@ -23,6 +23,13 @@ class AC_UT390B
     AC_UT390B(HardwareSerial* serialPort);
 
     /** 
+      * Set a offset value to be added to all measures.
+      * Unit is meter. Negative values are allowed. 
+      * Default value is zero.
+      */
+    void setOffset(float offset);
+
+    /** 
       * Set a timeout before measure is considered to be failed.
       * Value to be expressed in milliseconds.
       * Use zero for no timeout. Default value is zero.
@@ -69,8 +76,8 @@ class AC_UT390B
     boolean isMeasureSuccessful();
 
     /** 
-      * Read the distance as a float, representing a number of millimiters,
-      * with precision 10^-1 (one digit after decimal point).
+      * Read the distance as a float, representing a number of meters,
+      * with precision 10^-4, that is, 0.1 millimeter.
       */
     float getMeasure();
 
@@ -78,6 +85,7 @@ class AC_UT390B
   private:
     HardwareSerial* serialPort;
     int timeout;
+    float offset;
 
     typedef enum { IDLE, ACQUIRE, READY, ERROR } Status;
     Status status;

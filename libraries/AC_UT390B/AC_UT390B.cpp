@@ -11,6 +11,10 @@ AC_UT390B::AC_UT390B(HardwareSerial* serialPort)
   status = IDLE;
 }
 
+void AC_UT390B::setOffset(float offset) {
+  this->offset = offset;
+}
+
 void AC_UT390B::setTimeout(int timeout) {
   this->timeout = timeout;
 }
@@ -69,7 +73,7 @@ void AC_UT390B::processMeasure() {
     if (c == '#') { // data end
       parsingData = false;
       if (bufferPos == bufferMaxLength) { // expecting a 16-char message
-        measure = getMeasureFromBuffer();
+        measure = offset + getMeasureFromBuffer();
         status = READY;
       }
     }

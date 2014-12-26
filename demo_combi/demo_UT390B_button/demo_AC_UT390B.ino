@@ -32,12 +32,29 @@ void queryMeasure() {
   telemeter.requestMeasure();
 }
 
+void completeMeasureIfNeeded() {
+  if (ongoingMeasure) {
+    telemeter.processMeasure();
+    if (telemeter.isMeasureComplete()) {
+       Serial.print("Measure: ");
+      if (telemeter.isMeasureSuccessful()) {
+        float value = telemeter.getMeasure();
+        Serial.println(value, 4);
+      } else {
+        Serial.println("error");
+      }
+      ongoingMeasure = false;
+    }
+  }
+}
+
 void setup()
 {
   Serial.begin(9600);   
   Serial.println("Starting up");
 
   telemeter.begin();
+  telemeter.setOffset(-0.05);
   telemeter.setLaserVisible(true);
   Serial.println("Laser on");
 
@@ -48,20 +65,6 @@ void setup()
 void loop()
 {
   button.poll();
-
-  if (ongoingMeasure) {
-    telemeter.processMeasure();
-    if (telemeter.isMeasureComplete()) {
-       Serial.print("Measure: ");
-      if (telemeter.isMeasureSuccessful()) {
-        float value = telemeter.getMeasure();
-        Serial.println(value, 3);
-      } else {
-        Serial.println("error");
-      }
-      ongoingMeasure = false;
-    }
-  }
-
+  completeMeasureIfNeeded();
   delay(10);
 }

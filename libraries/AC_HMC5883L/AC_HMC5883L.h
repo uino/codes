@@ -1,10 +1,10 @@
 /**
- * AC_HMC5883 library.
+ * AC_HMC5883L library.
  * Code by Arthur Chargueraud
  * Adpated from http://www.adafruit.com/products/1746.
  * This code is GPL.
  *
- * This library can be used to control a HMC5883 3-axis magnetometer.
+ * This library can be used to control a HMC5883L 3-axis magnetometer.
  *
  * There are a couple important things to know for using it.
  * 
@@ -23,20 +23,47 @@
  * Recall that 1 Gauss unit equals 100 micro-Teslas.
  */
 
-#ifndef AC_HMC5883_h
-#define AC_HMC5883_h
+#ifndef AC_HMC5883L_h
+#define AC_HMC5883L_h
 
 #include <Arduino.h>
 #include <Wire.h>
 
-class AC_HMC5883
+class AC_HMC5883L
 {
   public:
 
     /** 
+      * Representation of a 3D vector of Gauss values.
+      */
+    typedef struct { float x, y, z; } Vector;
+
+    /** 
       * Construct a new device given the Serial port connected to the hardware.
       */
-    AC_HMC5883();
+    AC_HMC5883L();
+
+    /** 
+      * Set the offset that applies to the measures.
+      */
+    void setOffset(Vector offset);
+    void setOffset(float x, float y, float z);
+
+    /** 
+      * Set the scaling factor that applies to the measures.
+      */
+    void setScale(Vector scale);
+    void setScale(float x, float y, float z);
+
+    /** 
+      * Get the offset that applies to the measures.
+      */
+    Vector getOffset();
+
+    /** 
+      * Get the scale that applies to the measures.
+      */
+    Vector getScale();
 
     /** 
       * Set the declination that applies to the angle measures.
@@ -55,6 +82,7 @@ class AC_HMC5883
       * Gain mode 
       */
     typedef enum {
+      GAIN_0_8 = 0x00,  // +/- 0.88
       GAIN_1_3 = 0x20,  // +/- 1.3
       GAIN_1_9 = 0x40,  // +/- 1.9
       GAIN_2_5 = 0x60,  // +/- 2.5
@@ -78,18 +106,20 @@ class AC_HMC5883
 
     /** 
       * Measure the magnetic field in the 3 axes and store the results.
-      * Use the "get" functions to obtain the results
+      * Use the "get" functions to obtain the results;
       */
     void makeMeasure();
 
     /** 
       * Get the norm, i.e. the strength, of the magnetic field. Unit is Gauss.
+      * Function makeMeasure must be called first.
       */
     float getNorm();
 
     /** 
       * Get the norm of the magnetic field ignoring the Z-axis component,
       * that is, only the norm of the vector projected in the XY plane.
+      * Function makeMeasure must be called first.
       */
     float getNormXY();
 
@@ -99,6 +129,7 @@ class AC_HMC5883
       * Returns a value in the range [0,2*PI).
       * Note that results can be inaccurate if both the x-axis
       * the y-axis components have relatively small values.
+      * Function makeMeasure must be called first.
       */
     float getHeading();
 
@@ -106,40 +137,64 @@ class AC_HMC5883
       * Get the heading angle, and return result in degrees,
       * assuming the z-axis to be perfectly vertical.
       * Returns a value in the range [0,360), up to rounding errors.
+      * Function makeMeasure must be called first.
       */
     float getHeadingDegrees();
 
     /** 
-      * Representation of a 3D vector of Gauss values.
-      */
-    typedef struct { float x, y, z; } Vector;
-
-    /** 
       * Get the 3 components of the measure at once.
+      * Function makeMeasure must be called first.
       */
-    Vector getMeasure();
+    Vector getVector();
 
     /** 
       * Get the X-axis component of the measure. Unit is Gauss.
+      * Function makeMeasure must be called first.
       */
     float getX();
 
     /** 
       * Get the Y-axis component of the measure. Unit is Gauss.
+      * Function makeMeasure must be called first.
       */
     float getY();
 
     /** 
       * Get the Z-axis component of the measure. Unit is Gauss.
+      * Function makeMeasure must be called first.
       */
     float getZ();
 
+    /** 
+      * Begin a calibration phase for use as a compass; 
+      * device should be horizontal. The function "stepCalibration"
+      * should be called with the device in all possible angles,
+      * then "endCalibration" should be called at the end.
+      */
+    void beginCalibration();
+    
+    /** 
+      * End the calibration phase and set the offset and the scale
+      * parameters accordingly.
+      */
+    void endCalibration();
+
+    /** 
+      * The function stepCalibration should be called during calibration
+      * phase, in various horizontal positions of the device.
+      */
+    void stepCalibration();
+
+
   private:
     const byte deviceAddress = 0x1E; //0011110b, I2C 7bit address of HMC5883
+    Vector offset;
+    Vector scale;
     float declination;
     GainMode gainMode;
-    float gainXY, gainZ; // depend on the gainMode
+    float gain; // deduced from gainMode
     Vector measure;
+    Vector minv, maxv; // for calibration
 
     /** 
       * Registers
@@ -166,7 +221,10 @@ class AC_HMC5883
     void write8(byte reg, byte value);
 
     // auxiliary function for setting the gain
-    void setGainXYZ();
+    float gainForMode(GainMode gainMode);
+
+    // auxiliary function for performing the measure
+    Vector getRawVector();
 
 };
 

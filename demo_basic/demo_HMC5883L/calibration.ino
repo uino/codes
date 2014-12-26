@@ -21,10 +21,15 @@ AC_HMC5883L compass;
 const int declinationDegrees = 1;
 const int declinationMinutes = 24;
 
-const long durationCalibration = 12000; // milliseconds
+const long durationCalibration = 10000; // milliseconds
 long dateCalibrationStart;
 boolean isCalibrating;
 
+// values for calibration phase
+AC_HMC5883L::Vector minv = { 1000, 1000, 1000 };
+AC_HMC5883L::Vector maxv = { -1000, -1000, -1000 };
+AC_HMC5883L::Vector scale = {0, 0, 0} ;
+AC_HMC5883L::Vector offset = {1, 1, 1} ;
 
 void setup()
 {
@@ -46,11 +51,11 @@ void setup()
 
   isCalibrating = true;
   dateCalibrationStart = millis();
-  Serial.println("Starting calibration: rotate slowly all around for 12 seconds.");
-  compass.beginCalibration();
+  Serial.println("Starting calibration: rotate slowly all around for 10 seconds.");
   delay(1000);
 }
   
+
 void displayFloat(float value, int nbChars, int precision) {
   // using: void dtostrf(float value, int nbChars, int precision, char* target) 
   const int nbDigits = 10; // >= nbChars
@@ -81,15 +86,38 @@ void loop()
   }
 
   if (isCalibrating) {
-    compass.stepCalibration();
+    AC_HMC5883L::Vector v = compass.getVector();
+    minv.x = min(minv.x, v.x);
+    maxv.x = max(maxv.x, v.x);
+    minv.y = min(minv.y, v.y);
+    maxv.y = max(maxv.y, v.y);
+    minv.z = min(minv.z, v.z);
+    maxv.z = max(maxv.z, v.z);
+    
+    offset.x = - (maxv.x + minv.x) / 2;
+    offset.y = - (maxv.y + minv.y) / 2;
+    offset.z = - (maxv.z + minv.z) / 2;
+    scale.x = 1 / ((maxv.x - minv.x) / 2);
+    scale.y = 1 / ((maxv.y - minv.y) / 2);
+    scale.z = 1 / ((maxv.z - minv.z) / 2);
+
+    Serial.print("Calibration offset: ");
+    displayFloat(offset.x, 7, 3);
+    Serial.print("\t");
+    displayFloat(offset.y, 7, 3);
+    Serial.print("\t");
+    displayFloat(offset.z, 7, 3);
+    Serial.println("");
+    Serial.print("Calibration scale: ");
+    displayFloat(scale.x, 7, 3);
+    Serial.print("\t");
+    displayFloat(scale.y, 7, 3);
+    Serial.print("\t");
+    displayFloat(scale.z, 7, 3);
+    Serial.println("");
   }
 
   if (isCalibrating && millis() - dateCalibrationStart > durationCalibration) {
-    compass.endCalibration();
-    isCalibrating = false;
-
-    AC_HMC5883L::Vector offset = compass.getOffset();
-    AC_HMC5883L::Vector scale = compass.getScale();
     Serial.print("Setting offset: ");
     displayFloat(offset.x, 7, 3);
     Serial.print(", ");
@@ -104,6 +132,10 @@ void loop()
     Serial.print(", ");
     displayFloat(scale.z, 7, 3);
     Serial.println("");
+
+    compass.setOffset(offset);
+    compass.setScale(scale);
+    isCalibrating = false;
   }
 
   if (! isCalibrating) {

@@ -16,6 +16,8 @@ ACbuttonLong buttonZero(buttonZeroPin);
 AC_UT390B telemeter(&Serial1);
 AC_HMC5883L compass;
 
+
+
 const byte rotPin1 = A6; // lower
 const byte rotPin2 = A7; // upper
 
@@ -33,6 +35,7 @@ float phi;
 float theta;
 float dist;
 Vector points[2];
+int nbPointsTargeted = 1;
 
 Vector vectorOfSpherical(float dist, float phi, float theta) {
   float z = dist * sin(theta);
@@ -82,20 +85,33 @@ float getAccelAngle() {
    return getAccelAngleRaw(); 
 }
 
-void queryMeasure() {
-  ongoingMeasure = true;
+void startMeasure() {
   telemeter.requestMeasure();
   compass.update();
   float anglePhi = compass.getHeading();
   phi = anglePhi;
   float angleTheta = getAccelAngle();
   theta = angleTheta;
-  Serial.print("Point ");
-  Serial.print(idMeasure+1);
-  Serial.print("\t  Phi: ");
-  Serial.print(RAD_TO_DEG * anglePhi, 1);
-  Serial.print("\t  Theta: ");
-  Serial.print(RAD_TO_DEG * angleTheta, 1);
+  if (nbPointsTargeted == 2) {
+    Serial.print("Point ");
+    Serial.print(idMeasure+1);
+    Serial.print("\t  Phi: ");
+    Serial.print(RAD_TO_DEG * anglePhi, 1);
+    Serial.print("\t  Theta: ");
+    Serial.print(RAD_TO_DEG * angleTheta, 1);
+  }
+}
+
+void queryMeasure() {
+  ongoingMeasure = true;
+  nbPointsTargeted = 2;
+  startMeasure();
+}
+
+void reportPoint() {
+  ongoingMeasure = true;
+  nbPointsTargeted = 1;
+  startMeasure();
 }
 
 void completeMeasure() {
@@ -104,13 +120,22 @@ void completeMeasure() {
     if (telemeter.isMeasureComplete()) {
       if (telemeter.isMeasureSuccessful()) {
         dist = telemeter.getMeasure();
-        Serial.print("\t Dist: ");
-        Serial.println(dist, 3);
         Vector v = vectorOfSpherical(dist, phi, theta);
-        Serial.print("  ==> ");
-        printVector(v);
-        Serial.println("");
-
+        if (nbPointsTargeted == 2) {
+          Serial.print("\t Dist: ");
+          Serial.println(dist, 3);
+          Serial.print("  ==> ");
+          printVector(v);
+          Serial.println("");
+        } else if (nbPointsTargeted == 1) {
+          Serial.print("# ");
+          Serial.print(v.x, 2);
+          Serial.print(" ");
+          Serial.print(v.y, 2);
+          Serial.print(" ");
+          Serial.print(v.z, 2);
+          Serial.println("");
+        }
         points[idMeasure] = v;
         idMeasure++;
       } else {
@@ -191,7 +216,9 @@ void setup()
   buttonMeasure.onUp(queryMeasure);
 
   buttonZero.begin();
-  buttonZero.onUp(rotZero);
+  // buttonZero.onUp(rotZero);
+
+  buttonZero.onUp(reportPoint);
 }
 
 void displayFloat(float value, int nbChars, int precision) {
@@ -239,9 +266,21 @@ void loop()
   }
   */
 
-  if (idMeasure == 2) {
+  if (idMeasure == nbPointsTargeted) {
 
-    float distance = vectorDist(points[0], points[1]);
+    if (nbPointsTargeted == 2) {
+      float distance = vectorDist(points[0], points[1]);
+      Serial.print("Distance: ");
+      Serial.println(distance, 3);
+      Serial.println("");
+    } 
+    idMeasure = 0;
+  }
+
+  delay(10);
+}
+
+
 
     /* code for 2D
     // Loi des cosinus:  c^2 = a^2 + b^2 - 2*a*b*cos(alpha)
@@ -250,15 +289,6 @@ void loop()
     float alpha = phi[1] - phi[0];
     float distance = sqrt(sq(a) + sq(b) - 2 * a * b * cos(alpha));
     */
-    Serial.print("Distance: ");
-    Serial.println(distance, 3);
-    Serial.println("");
-    idMeasure = 0;
-  }
-
-  delay(10);
-}
-
 
 
 /*

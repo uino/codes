@@ -112,7 +112,7 @@ AC_HMC5883L::Vector AC_HMC5883L::getRawVector() {
   return v;
 }
 
-void AC_HMC5883L::makeMeasure() {
+void AC_HMC5883L::update() {
   Vector v = getRawVector();
   // TODO: use operators on 3D vectors from a library
   measure.x = scale.x * (offset.x + v.x);
@@ -157,10 +157,6 @@ float AC_HMC5883L::getHeading() {
     heading -= 2*PI;
   }
   return heading;
-}
-
-float AC_HMC5883L::getHeadingDegrees() {
-  return getHeading() / M_PI * 180.; 
 }
 
 void AC_HMC5883L::beginCalibration() {

@@ -15,6 +15,7 @@ ADXL335::ADXL335(int pin_x, int pin_y, int pin_z, float aref)
   _mvG = aref / 10.0;
   _bias = aref / 2.0;
   _rad2deg = 180.0 / M_PI;
+  _deadzone = 0;
 }
 
 //begin private methods

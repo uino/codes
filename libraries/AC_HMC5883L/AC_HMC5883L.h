@@ -108,18 +108,18 @@ class AC_HMC5883L
       * Measure the magnetic field in the 3 axes and store the results.
       * Use the "get" functions to obtain the results;
       */
-    void makeMeasure();
+    void update();
 
     /** 
       * Get the norm, i.e. the strength, of the magnetic field. Unit is Gauss.
-      * Function makeMeasure must be called first.
+      * Function update must be called first.
       */
     float getNorm();
 
     /** 
       * Get the norm of the magnetic field ignoring the Z-axis component,
       * that is, only the norm of the vector projected in the XY plane.
-      * Function makeMeasure must be called first.
+      * Function update must be called first.
       */
     float getNormXY();
 
@@ -129,39 +129,31 @@ class AC_HMC5883L
       * Returns a value in the range [0,2*PI).
       * Note that results can be inaccurate if both the x-axis
       * the y-axis components have relatively small values.
-      * Function makeMeasure must be called first.
+      * Function update must be called first.
       */
     float getHeading();
 
     /** 
-      * Get the heading angle, and return result in degrees,
-      * assuming the z-axis to be perfectly vertical.
-      * Returns a value in the range [0,360), up to rounding errors.
-      * Function makeMeasure must be called first.
-      */
-    float getHeadingDegrees();
-
-    /** 
       * Get the 3 components of the measure at once.
-      * Function makeMeasure must be called first.
+      * Function update must be called first.
       */
     Vector getVector();
 
     /** 
       * Get the X-axis component of the measure. Unit is Gauss.
-      * Function makeMeasure must be called first.
+      * Function update must be called first.
       */
     float getX();
 
     /** 
       * Get the Y-axis component of the measure. Unit is Gauss.
-      * Function makeMeasure must be called first.
+      * Function update must be called first.
       */
     float getY();
 
     /** 
       * Get the Z-axis component of the measure. Unit is Gauss.
-      * Function makeMeasure must be called first.
+      * Function update must be called first.
       */
     float getZ();
 

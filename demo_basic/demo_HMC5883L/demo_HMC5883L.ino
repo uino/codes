@@ -61,7 +61,7 @@ void displayFloat(float value, int nbChars, int precision) {
 
 void loop()
 {
-  compass.makeMeasure();
+  compass.update();
 
   // display of raw values
   if (false) { // use "true" to see raw measures
@@ -107,7 +107,7 @@ void loop()
   }
 
   if (! isCalibrating) {
-    float heading = compass.getHeadingDegrees();
+    float heading = RAD_TO_DEG * compass.getHeading();
     float norm = compass.getNorm() * 100.; // in microtesla
     float normXY = compass.getNormXY() * 100.; // in microtesla
     Serial.print("Heading: ");

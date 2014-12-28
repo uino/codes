@@ -1,9 +1,10 @@
 /**
- * AC_UT390B library.
- * Code by Arthur Chargueraud
- * Adpated from http://youtu.be/qUgFji4Figw.
+ * AC_UT390B library for interacting with a UT390B telemeter.
+ * an infinitely rotating device.
+ * Code by Arthur Chargueraud.
+ * Distributed under LGPL (GNU Lesser General Public License version 3).
  *
- * This library can be used to control a UT390B telemeter.
+ * Code adpated from http://youtu.be/qUgFji4Figw.
  *
  * // TODO: add support for error codes
  */

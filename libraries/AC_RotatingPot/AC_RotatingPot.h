@@ -1,7 +1,9 @@
 /**
- * AC_RotatingPot library.
- * Code by Arthur Chargueraud
- * Copyleft code.
+ * AC_RotatingPot library for using a potentiometer to simulate
+ * an infinitely rotating device.
+ * Code by Arthur Chargueraud.
+ * Distributed under LGPL (GNU Lesser General Public License version 3).
+ *
  *
  * The purpose of this library is to report rotations of
  * a potentiometer, with the specificity that when the

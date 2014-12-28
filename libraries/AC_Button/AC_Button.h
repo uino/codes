@@ -1,7 +1,8 @@
 /**
- * AC_Button library.
- * Code by Arthur Chargueraud
- * Copyleft code.
+ * AC_Button library for polling events from a basic button.
+ * Code by Arthur Chargueraud.
+ * Distributed under LGPL (GNU Lesser General Public License version 3).
+ *
  *
  * This library can be used to control a button and make
  * the distinction between short and long click, for a 

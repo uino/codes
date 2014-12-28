@@ -1,23 +1,16 @@
 /**
-   Nokia 5100 LCD Library
+ * AC_Nokia_5100 library for controlling a Nokia 5100 LCD display device.
+ * Code by Arthur Chargueraud.
+ * Distributed under LGPL (GNU Lesser General Public License version 3).
+ *
+ * Adapted from code by https://www.sparkfun.com/products/10168
+ * Adapted from code by Jim Lindblom,
+ * Adapted from code by Nathan Seidle and mish-mashed with ColorLCDShield code.
+ *
+ *
+ */
 
-   Adapted by Arthur Chargueraud.
-   Placed the character table in Flash instead of SRAM.
-
-   ---
-     Graphics driver and PCD8544 interface code for SparkFun's
-     84x48 Graphic LCD.
-     https://www.sparkfun.com/products/10168
-   
-      by: Jim Lindblom
-        adapted from code by Nathan Seidle and mish-mashed with
-        code from the ColorLCDShield.
-      date: October 10, 2013
-      license: Beerware. Feel free to use, reuse, and modify this
-      code as you see fit. If you find it useful, and we meet someday,
-      you can buy me a beer.
-    ---
-
+/*
    Hardware: (Note most of these pins can be swapped)
     Graphic LCD Pin ---------- Arduino Pin
        1-VCC       ----------------  5V

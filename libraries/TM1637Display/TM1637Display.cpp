@@ -1,19 +1,4 @@
-
-//  Author: avishorp@gmail.com
-//
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU Lesser General Public
-//  License as published by the Free Software Foundation; either
-//  version 2.1 of the License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ 
 
 extern "C" {
   #include <stdlib.h>
@@ -196,5 +181,36 @@ uint8_t TM1637Display::encodeDigit(uint8_t digit)
 	return digitToSegment[digit & 0x0f];
 }
 
-   
+void TM1637Display::showNumberDecDot(int num, bool leading_zero, uint8_t length, uint8_t pos, int decimal_dot_place)
+{
+  uint8_t digits[4];
+  const static int divisors[] = { 1, 10, 100, 1000 };
+  bool leading = true;
 
+  for(int8_t k = 0; k < 4; k++) {
+    int divisor = divisors[4 - 1 - k];
+    int d = num / divisor;
+
+    if (d == 0) {
+      if (leading_zero || !leading || (k == 3))
+        {
+     digits[k] = encodeDigit(d);
+     if (decimal_dot_place==k)
+       digits[k] += 0b10000000;
+    }
+      else
+        digits[k] = 0;
+     if (decimal_dot_place==k)
+       digits[k] += 0b10000000;
+    }
+
+    else {
+        digits[k] = encodeDigit(d);
+        num -= d * divisor;
+        leading = false;
+     if (decimal_dtot_place==k)
+       digits[k] += 0b10000000;
+    }
+  }
+  setSegments(digits + (4 - length), length, pos);
+}

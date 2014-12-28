@@ -1,8 +1,12 @@
-/*
-  AC_ADXL335.h - Library for reading the ADXL335 Accelerometer
-  Created by Derek Chafin, September 14, 2011
-  Released into the public domain.
-*/
+/**
+ * AC_ADXL335 library for reading the ADXL335 Accelerometer.
+ * Code by Arthur Chargueraud.
+ * Distributed under LGPL (GNU Lesser General Public License version 3).
+ *
+ * Adapted from code by Derek Chafin (released into the public domain).
+ *
+ */
+
 
 #ifndef AC_ADXL335_h
 #define AC_ADXL335_h

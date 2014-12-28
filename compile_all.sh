@@ -19,6 +19,9 @@ mycompile() {
   if [ ! -d src ];
   then
     mkdir src
+  fi
+  if [ ! -f src/sketch.ino ];
+  then
     echo "#include \"../${FOLDER}.ino\"" > src/sketch.ino
   fi
   # ino clean

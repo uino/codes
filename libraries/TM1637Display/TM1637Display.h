@@ -1,18 +1,11 @@
-//  Author: avishorp@gmail.com
-//
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU Lesser General Public
-//  License as published by the Free Software Foundation; either
-//  version 2.1 of the License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+/**
+ * AC_TM1637 library for controlling the TM1637 display device.
+ * Code by Arthur Chargueraud.
+ * Distributed under LGPL (GNU Lesser General Public License version 3).
+ *
+ * Inspired from the TM1637Display library (LGPL) by avishorp@gmail.com.
+ *
+ */
 
 #ifndef __TM1637DISPLAY__
 #define __TM1637DISPLAY__
@@ -72,6 +65,9 @@ public:
   //! @param pos The position least significant digit (0 - leftmost, 3 - rightmost)
   void showNumberDec(int num, bool leading_zero = false, uint8_t length = 4, uint8_t pos = 0);
   
+  //! @param decimal_dot_place - show decimal dot on selected segment
+  void showNumberDecDot(int num, bool leading_zero = false, uint8_t length = 4, uint8_t pos = 0, int decimal_dot_place = 5);
+
   //! Translate a single digit into 7 segment code
   //!
   //! The method accepts a number between 0 - 15 and converts it to the

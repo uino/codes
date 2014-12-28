@@ -1,12 +1,12 @@
 /**
- * AC_HMC5883L library.
- * Code by Arthur Chargueraud
- * Adpated from http://www.adafruit.com/products/1746.
- * This code is GPL.
+ * AC_HMC5883L library for controlling a HMC5883L 3-axis magnetometer.
+ * Code by Arthur Chargueraud.
+ * Distributed under LGPL (GNU Lesser General Public License version 3).
  *
- * This library can be used to control a HMC5883L 3-axis magnetometer.
+ * Adapted from code by http://www.adafruit.com/products/1746.
+ * 
  *
- * There are a couple important things to know for using it.
+ * There are a couple important things to know for using a magnetometer.
  * 
  * First, you need the compass to be perfectly horizontal, because the
  * Z-axis component of the earth magnetic field is significant compared

@@ -4,7 +4,7 @@
  * This code is in the public domain.
  *
  * Note: this is only a demo to check button wiring.
- * For processing button events, use the library ACbuttonLong.
+ * For processing button events, use the library AC_Button.
  */
 
 const int buttonPin = 6;

@@ -1,3 +1,9 @@
+
+void setup() {
+}
+void loop() {
+}
+/*
 // TODO
 
 #include <SD.h>
@@ -106,3 +112,6 @@ Note:
 
 Returns:
     The value one, true, is returned for success and the value zero, false, is returned for failure. 
+
+
+*/

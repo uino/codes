@@ -5,14 +5,14 @@
 
 #include <AC_HMC5883L.h>
 #include <AC_UT390B.h>
-#include <ACbuttonLong.h>
+#include <AC_Button.h>
 
 typedef AC_HMC5883L::Vector Vector;
 
 const int buttonMeasurePin = 6;
 const int buttonZeroPin = 2;
-ACbuttonLong buttonMeasure(buttonMeasurePin);
-ACbuttonLong buttonZero(buttonZeroPin);
+AC_Button buttonMeasure(buttonMeasurePin);
+AC_Button buttonZero(buttonZeroPin);
 AC_UT390B telemeter(&Serial1);
 AC_HMC5883L compass;
 

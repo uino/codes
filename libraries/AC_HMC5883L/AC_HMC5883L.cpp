@@ -1,5 +1,5 @@
 /**
- * ACbuttonLong Library. See "ACbuttonLong.h" for information.
+ * AC_Button Library. See "AC_Button.h" for information.
  */
 
 #include "AC_HMC5883L.h"

@@ -21,15 +21,15 @@
  */
 
 #include <avr/pgmspace.h>
-#include <ACmemory.h>
+#include <AC_RAM.h>
 #include <SD.h>
 #include <SHT1x.h>
 #include <DS3232RTC.h> 
 #include <Time.h>
 #include <Wire.h>  
-#include <ACnokia5100.h>
-#include <ACrotatingPot.h>
-#include <ACbuttonLong.h>
+#include <AC_Nokia5100.h>
+#include <AC_RotatingPot.h>
+#include <AC_Button.h>
 #include "defs.h"
 
 
@@ -48,18 +48,18 @@ const boolean serialUsed = true;
 
 // Button
 // (pins: buttonPin)
-ACbuttonLong button(2);
+AC_Button button(2);
 const int buttonSensitivity = 300;
 
 // Rotating potentiometer
 int rotPin = A0;
 const int rotSensitivity = 20; 
 const boolean rotInverted = true; 
-ACrotatingPot rot(rotPin, rotSensitivity, rotInverted);
+AC_RotatingPot rot(rotPin, rotSensitivity, rotInverted);
 
 // Nokia5100 : for display
 // (pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin)
-ACnokia5100 screen(3, 4, 5, 11, 13, 7);
+AC_Nokia5100 screen(3, 4, 5, 11, 13, 7);
 
 // SHT1x : for measuring temperature and humidity
 // (pins: dataPin, clockPin)
@@ -93,7 +93,7 @@ void reportSRAM() {
   if (!serialUsed) 
     return;
   Serial.print(F("SRAM free: "));
-  Serial.println(getFreeSRAM());
+  Serial.println(AC_RAM::getFree());
 }
 
 
@@ -130,8 +130,8 @@ void printMeasureOnSerial(Record& r) {
 //*****************************************************************
 /* LCD functions */
 
-const int screenNbRows = ACnokia5100::LCD_ROWS;
-const int screenNbCols = ACnokia5100::LCD_COLS; 
+const int screenNbRows = AC_Nokia5100::LCD_ROWS;
+const int screenNbCols = AC_Nokia5100::LCD_COLS; 
 const int bufferRowLength = 30; // = screenNbCols+1 (but using more characters for safety)
 
 // prints a two-digit nonnegative int into a given target string (of length >= 2)

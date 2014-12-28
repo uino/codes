@@ -17,14 +17,14 @@
  * TODO: currently the SD card conflicts with the LCD display
  */
 
-// #include <ACbuttonLong.h>
+// #include <AC_Button.h>
 // #include <SD.h>
 #include <SHT1x.h>
 #include <DS3232RTC.h> 
 #include <Time.h>
 #include <Wire.h>  
-#include <ACnokia5100.h>
-#include <ACrotatingPot.h>
+#include <AC_Nokia5100.h>
+#include <AC_RotatingPot.h>
 
 
 //*****************************************************************
@@ -41,14 +41,14 @@ const boolean serialUsed = true;
 
 // Button
 // (pins: buttonPin)
-// ACbuttonLong button(2);
+// AC_Button button(2);
 const int buttonSensitivity = 300;
 
 // Rotating potentiometer
 int rotPin = A0;
 const int rotSensitivity = 20; 
 const boolean rotInverted = true; 
-ACrotatingPot rot(rotPin, rotSensitivity, rotInverted);
+AC_RotatingPot rot(rotPin, rotSensitivity, rotInverted);
 
 // SHT1x : for measuring temperature and humidity
 // (pins: dataPin, clockPin)
@@ -63,7 +63,7 @@ const int SDhardwareCSPin = 10;
 
 // Nokia5100 : for display
 // (pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin)
-ACnokia5100 screen(3, 4, 5, 11, 13, 7);
+AC_Nokia5100 screen(3, 4, 5, 11, 13, 7);
 
 // Measure configuration
 const int nbMeasures = 3; // --currently, at most 5 measures

@@ -15,9 +15,9 @@
 #include <Wire.h>
 #include <SHT1x.h>
 #include <Time.h>
-#include <ACnokia5100.h>
+#include <AC_Nokia5100.h>
 #include <DS3232RTC.h> 
-#include <ACbuttonLong.h>
+#include <AC_Button.h>
 #include <avr/pgmspace.h>
 #include "defs.h"
 
@@ -26,15 +26,15 @@
 /* Configuration */
 
 
-// ACnokia5100 pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin
-// ACnokia5100 screen(3, 4, 5, 11, 13, 9);
-ACnokia5100 screen(3, 4, 5, 11, 13, 8);
+// AC_Nokia5100 pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin
+// AC_Nokia5100 screen(3, 4, 5, 11, 13, 9);
+AC_Nokia5100 screen(3, 4, 5, 11, 13, 8);
 
 // ds3232 : for measuring clock and temperature
 DS3232RTC ds3232;
 
-// ACbuttonLong pins: buttonPin
-ACbuttonLong button(2);
+// AC_Button pins: buttonPin
+AC_Button button(2);
 
 // SHT1x pins: dataPin, clockPin
 SHT1x sht1x(9, 10);
@@ -94,8 +94,8 @@ void printMeasureOnSerial(Record& r) {
 
 // TODO: move some of this to a library
 
-const int screenNbRows = ACnokia5100::LCD_ROWS;
-const int screenNbCols = ACnokia5100::LCD_COLS; 
+const int screenNbRows = AC_Nokia5100::LCD_ROWS;
+const int screenNbCols = AC_Nokia5100::LCD_COLS; 
 const int bufferRowLength = 30; // = screenNbCols+1 (but using more characters for safety)
 
 // prints a two-digit nonnegative int into a given target string (of length >= 2)

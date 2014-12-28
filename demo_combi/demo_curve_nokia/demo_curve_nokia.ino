@@ -1,5 +1,5 @@
 /**
- * Demo for the ACbuttonLong library.
+ * Demo for the AC_Button library.
  * Code by Arthur Chargueraud.
  * This code is in the public domain.
  * 
@@ -8,11 +8,11 @@
  */
 
 
-#include <ACbuttonLong.h>
-#include <ACnokia5100.h>
+#include <AC_Button.h>
+#include <AC_Nokia5100.h>
 
-// ACnokia5100 pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin
-ACnokia5100 screen(3, 4, 5, 11, 13, 9);
+// AC_Nokia5100 pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin
+AC_Nokia5100 screen(3, 4, 5, 11, 13, 9);
 
 // Potentiometer pin:
 int potentiometerPin = A0;

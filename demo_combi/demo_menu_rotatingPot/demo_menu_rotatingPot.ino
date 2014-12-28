@@ -2,21 +2,21 @@
  * Arthur Chargueraud
  * This code is GNU GPL.
  *
- * Implementation of a menu displayed on a ACnokia5100
+ * Implementation of a menu displayed on a AC_Nokia5100
  * and manipulated using a rotatingPotentiometer (a
- * normal potentiometer with the ACrotatingPot library) 
+ * normal potentiometer with the AC_RotatingPot library) 
  * and a button (with short and long clicks, using the
- * ACbuttonLong library).
+ * AC_Button library).
  *
  * Be careful to allocate strings in Flash and not in SRAM
  * in order to avoid running out of space.
  */
 
-#include <ACnokia5100.h>
-#include <ACrotatingPot.h>
-#include <ACbuttonLong.h>
+#include <AC_Nokia5100.h>
+#include <AC_RotatingPot.h>
+#include <AC_Button.h>
 #include <avr/pgmspace.h> 
-#include <ACmemory.h>
+#include <AC_RAM.h>
 #include "defs.h"
 
 
@@ -25,18 +25,18 @@
 
 // Button
 // (pins: buttonPin)
-ACbuttonLong button(2);
+AC_Button button(2);
 const int buttonSensitivity = 300; // milliseconds
 
 // Rotating potentiometer
 int rotPin = A0;
 const int rotSensitivity = 40; // steps out of 1024 
 const boolean rotInverted = true; 
-ACrotatingPot rot(rotPin, rotSensitivity, rotInverted);
+AC_RotatingPot rot(rotPin, rotSensitivity, rotInverted);
 
 // Nokia5100 : for display
 // (pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin)
-ACnokia5100 screen(3, 4, 5, 11, 13, 7);
+AC_Nokia5100 screen(3, 4, 5, 11, 13, 7);
 
 
 //*****************************************************************
@@ -101,12 +101,12 @@ const PanelDescr panelDescrs[nbPanels] = {
 //*****************************************************************
 /* Constants */
 
-const int screenNbRows = ACnokia5100::LCD_ROWS;
-const int screenNbCols = ACnokia5100::LCD_COLS; // assumed to be 14
+const int screenNbRows = AC_Nokia5100::LCD_ROWS;
+const int screenNbCols = AC_Nokia5100::LCD_COLS; // assumed to be 14
 const int bufferRowLength = 30; // = screenNbCols+1 (but using more characters for safety)
 
-const int WHITE = ACnokia5100::WHITE;
-const int BLACK = ACnokia5100::BLACK;
+const int WHITE = AC_Nokia5100::WHITE;
+const int BLACK = AC_Nokia5100::BLACK;
 
 
 //*****************************************************************
@@ -185,7 +185,7 @@ void longClick() {
 
 void reportSRAM() {
   Serial.print(F("SRAM free: "));
-  Serial.println(getFreeSRAM());
+  Serial.println(AC_RAM::getFree());
 }
 
 void setup()

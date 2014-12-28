@@ -2,8 +2,16 @@
  * Demo for the AC_HMC5883L library.
  * Code by Arthur Chargueraud.
  * This code is GPL.
+
+
+
+ *  ****************** TODO: udpate...
+
+
+
+
  *
- * Use a magnetormeter to measure the strength of the magnetic field,
+ * Use a magnetometer to measure the strength of the magnetic field,
  * and to obtain the direction of the North.
  * For the latter, we assume magnetic declination to be registered 
  * and the compass device to be horizontal.
@@ -26,10 +34,10 @@ long dateCalibrationStart;
 boolean isCalibrating;
 
 // values for calibration phase
-AC_HMC5883L::Vector minv = { 1000, 1000, 1000 };
-AC_HMC5883L::Vector maxv = { -1000, -1000, -1000 };
-AC_HMC5883L::Vector scale = {0, 0, 0} ;
-AC_HMC5883L::Vector offset = {1, 1, 1} ;
+Vector minv = { 1000, 1000, 1000 };
+Vector maxv = { -1000, -1000, -1000 };
+Vector scale = {0, 0, 0} ;
+Vector offset = {1, 1, 1} ;
 
 void setup()
 {
@@ -47,6 +55,8 @@ void setup()
   Serial.println("Starting up");
 
   compass.begin(); 
+compass.setGainMode(AC_HMC5883L::GAIN_8_1); // todo : TEMPORARY
+
   compass.setDeclinationDegrees(declinationDegrees, declinationMinutes); 
 
   isCalibrating = true;
@@ -66,20 +76,18 @@ void displayFloat(float value, int nbChars, int precision) {
 
 void loop()
 {
-  compass.makeMeasure();
+  compass.update();
 
   // display of raw values
-  if (false) { // use "true" to see raw measures
-    float x = compass.getX();
-    float y = compass.getY();
-    float z = compass.getZ();
+  if (true) { // use "true" to see raw measures
+    AC_HMC5883L::Vector v = compass.getRawVector();
     Serial.print("Raw values: ");
     Serial.print("\t");
-    displayFloat(x, 7, 3);
+    displayFloat(v.x, 7, 3);
     Serial.print("\t");
-    displayFloat(y, 7, 3);
+    displayFloat(v.y, 7, 3);
     Serial.print("\t");
-    displayFloat(z, 7, 3);
+    displayFloat(v.z, 7, 3);
     Serial.println("");
     delay(500);
     return;
@@ -139,7 +147,7 @@ void loop()
   }
 
   if (! isCalibrating) {
-    float heading = compass.getHeadingDegrees();
+    float heading = RAD_TO_DEG * compass.getHeading();
     float norm = compass.getNorm() * 100.; // in microtesla
     float normXY = compass.getNormXY() * 100.; // in microtesla
     Serial.print("Heading: ");

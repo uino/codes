@@ -21,6 +21,11 @@
  * it can be used in a strong field, such as that created by a magnet.
  * See the interface below for selecting a gain. 
  * Recall that 1 Gauss unit equals 100 micro-Teslas.
+ *
+ *
+ *          WARNING: experimental implementation, absolute values might
+ *                   be completely wrong (however, heading should work).
+ * 
  */
 
 #ifndef AC_HMC5883L_h
@@ -28,15 +33,11 @@
 
 #include <Arduino.h>
 #include <Wire.h>
+#include <AC_Vector.h>
 
 class AC_HMC5883L
 {
   public:
-
-    /** 
-      * Representation of a 3D vector of Gauss values.
-      */
-    typedef struct { float x, y, z; } Vector;
 
     /** 
       * Construct a new device given the Serial port connected to the hardware.
@@ -96,6 +97,11 @@ class AC_HMC5883L
       * Set the gain parameter of the device. Default is GAIN_1_3.
       */
     void setGainMode(GainMode gainMode);
+
+    /** 
+      * Get the value of the current gain parameter set for the device. 
+      */
+    GainMode getGainMode();
 
     /** 
       * To be called from the main setup before the device can be used.
@@ -177,6 +183,31 @@ class AC_HMC5883L
       */
     void stepCalibration();
 
+     /** 
+      * Function to perform a measure and return the raw output of the device.
+      * In general, prefer using "update" and the accessor function.
+      */
+    Vector measureRawVector();
+
+     /** 
+      * Function to perform a measure and return the raw output of the device
+      * adjusted using the calibration that was registered in the device.
+      */
+    Vector measureCalibratedVector();
+
+     /** 
+      * Function to perform a measure and return the value, once adjusted for
+      * calibration and gain. This is the value stored in the measure field
+      * when "update" is called.
+      */
+    Vector measureGainAdjustedVector();
+
+     /** 
+      * Return the conversion value "steps per Gauss" that applies for a given
+      * gain Mode.
+      */
+    float gainForMode(GainMode gainMode);
+
 
   private:
     const byte deviceAddress = 0x1E; //0011110b, I2C 7bit address of HMC5883
@@ -185,8 +216,7 @@ class AC_HMC5883L
     float declination;
     GainMode gainMode;
     float gain; // deduced from gainMode
-    Vector measure;
-    Vector minv, maxv; // for calibration
+    Vector measure; // last measure performed
 
     /** 
       * Registers
@@ -212,11 +242,9 @@ class AC_HMC5883L
     // auxiliary function for using Wire
     void write8(byte reg, byte value);
 
-    // auxiliary function for setting the gain
-    float gainForMode(GainMode gainMode);
 
-    // auxiliary function for performing the measure
-    Vector getRawVector();
+  public: // should only access this field for debugging
+    Vector minv, maxv; // raw measure extrema, during calibration
 
 };
 

@@ -88,8 +88,8 @@ void loop()
     compass.endCalibration();
     isCalibrating = false;
 
-    AC_HMC5883L::Vector offset = compass.getOffset();
-    AC_HMC5883L::Vector scale = compass.getScale();
+    Vector offset = compass.getOffset();
+    Vector scale = compass.getScale();
     Serial.print("Setting offset: ");
     displayFloat(offset.x, 7, 3);
     Serial.print(", ");

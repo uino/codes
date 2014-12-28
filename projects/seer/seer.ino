@@ -7,8 +7,6 @@
 #include <AC_UT390B.h>
 #include <AC_Button.h>
 
-typedef AC_HMC5883L::Vector Vector;
-
 const int buttonMeasurePin = 6;
 const int buttonZeroPin = 2;
 AC_Button buttonMeasure(buttonMeasurePin);

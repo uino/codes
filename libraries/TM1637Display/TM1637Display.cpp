@@ -20,7 +20,8 @@ extern "C" {
 //     -G-
 //  E |   | C
 //     ---
-//      D
+//      D      X (for decimal point)
+
 const uint8_t digitToSegment[] = {
  // XGFEDCBA
   0b00111111,    // 0
@@ -38,7 +39,8 @@ const uint8_t digitToSegment[] = {
   0b00111001,    // C
   0b01011110,    // d
   0b01111001,    // E
-  0b01110001     // F
+  0b01110001,    // F
+  0b01000000,    // -
   };
 
 
@@ -208,7 +210,7 @@ void TM1637Display::showNumberDecDot(int num, bool leading_zero, uint8_t length,
         digits[k] = encodeDigit(d);
         num -= d * divisor;
         leading = false;
-     if (decimal_dtot_place==k)
+     if (decimal_dot_place==k)
        digits[k] += 0b10000000;
     }
   }

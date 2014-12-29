@@ -114,8 +114,29 @@ String formatFloat(double value, int places, int* string_width)
   return String(dtostrf(value,num_width,places,s));  
 }
 
+void displayFloat(float value, int nbChars, int precision) {
+  // using: void dtostrf(float value, int nbChars, int precision, char* target) 
+  const int nbDigits = 10; // >= nbChars
+  char buffer[nbDigits];
+  dtostrf(value, nbChars, precision, buffer);
+  Serial.print(buffer);
+}
+
 void loop()
 {
+  // Display raw
+  int x = analogRead(pin_x);
+  int y = analogRead(pin_y);
+  int z = analogRead(pin_z);
+  displayFloat(x, 6, 1);
+  Serial.print(", ");
+  displayFloat(y, 6, 1);
+  Serial.print(", ");
+  displayFloat(z, 6, 1);
+  Serial.println("");
+
+
+/*
   //this is required to update the values
   accel.update();
   
@@ -152,6 +173,6 @@ void loop()
   Serial.print(",\t");
   Serial.print(formatFloat(theta, 3, &string_width));
   Serial.println("");
-  
-  delay(100);
+  */
+  delay(200);
 }

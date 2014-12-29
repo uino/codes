@@ -12,18 +12,18 @@
  */
 
 #include <AC_HMC5883L.h>
+/*
+
+Setting offset: -132.500, 291.500, 452.000
+Setting scale:   1.000,   0.869,   9.271
+
+*/
 
 AC_HMC5883L magneto;
 
 const long durationCalibration = 15000; // milliseconds
 long dateCalibrationStart;
 boolean isCalibrating;
-
-/*
-Setting offset: -49.000, -109.000, 1578.500
-Setting scale:   1.000,   0.941,   0.612
-
-*/
 
 
 void setup()
@@ -45,6 +45,8 @@ void setup()
    //magneto.setGainMode(AC_HMC5883L::GAIN_8_1); // todo : TEMPORARY
   magneto.setGainMode(AC_HMC5883L::GAIN_0_8);
 
+//  magneto.setGainMode(AC_HMC5883L::GAIN_2_5);
+  
   isCalibrating = true;
   dateCalibrationStart = millis();
 
@@ -133,6 +135,12 @@ void loop()
   if (! isCalibrating && millis() - dateLastShow > 200) {
     dateLastShow = millis();
 
+    magneto.update();
+    Vector v = magneto.getVector();
+    Serial.print("XY-heading: ");
+    displayFloat(v.phi() * RAD_TO_DEG, 7, 1);
+    Serial.print("\t");
+
     Vector m = magneto.measureCalibratedVector();
     Serial.print("Calibrated: ");
     Serial.print("\t");
@@ -144,15 +152,13 @@ void loop()
     Serial.println("");
 
   /*
+Setting offset: -65.000, 190.500, -580.000
+Setting scale:   1.000,   0.987,   5.373
+
  */
 
 
 /*
-    magneto.update();
-    Vector v = magneto.getVector();
-    Serial.print("XY-heading: ");
-    displayFloat(v.phi() * RAD_TO_DEG, 7, 1);
-    Serial.print("\t");
 
     Serial.print("average: ");
     displayFloat(sum.phi() * RAD_TO_DEG, 7, 1);

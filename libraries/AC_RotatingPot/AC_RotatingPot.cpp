@@ -4,7 +4,7 @@
 
 #include "AC_RotatingPot.h"
 
-AC_RotatingPot::AC_RotatingPot(int inputPin)
+AC_RotatingPot::AC_RotatingPot(byte inputPin)
 {
   this->inputPin = inputPin;
   changeHandler = NULL;

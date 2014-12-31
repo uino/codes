@@ -6,7 +6,7 @@
 
 #define DebugPrint(msg)
 
-AC_Button::AC_Button(int inputPin)
+AC_Button::AC_Button(byte inputPin)
 {
   this->inputPin = inputPin;
   longPeriodDuration = 200;

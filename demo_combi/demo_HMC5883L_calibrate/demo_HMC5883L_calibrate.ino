@@ -1,58 +1,104 @@
 /**
- * Demo for using the AC_HMC5883L library to calibrate the magneto-meter.
+ * Demo for calibration of a HMC5883L magnetometer.
  * Code by Arthur Chargueraud.
  * This code is GPL.
  *
  * The demo begins with a calibration phase during which the sensor
  * should be rotated in all directions for 15 seconds.
- * During this phase, raw values and their extrema are reported.
- * Then the calibration settings are printed out.
- * Then, calibrated values are reported out, both as raw and as Gauss values.
  *
+ * During this phase, raw values and their extrema are reported.
+ * If values exceed +/- 4096, it means that the gain is to small
+ * and overflow occurs; use a higher gain value and try again.
+ *
+ * Then the calibration settings are printed out.
+ * Then, XY-heading and calibrated measures are reported.
+ *
+ * At this point, a button can be pressed to assign an offset so
+ * that the current direction is reported as 0 degrees.
+ * 
+ * The powering of the magnetometer may be controlled by a particular
+ * digital pin, whose value is set to HIGH in order to turn on the 
+ * magnetometer device.
+ *
+ * Make sure to select the gain to be used
  */
 
+// comment out the line below if no power-control pin is used.
+#define POWER_CONTROL_PIN 4
+
+
 #include <AC_HMC5883L.h>
-/*
+#include <AC_Button.h>
 
-Setting offset: -132.500, 291.500, 452.000
-Setting scale:   1.000,   0.869,   9.271
+const int buttonZeroPin = 2;
+AC_Button buttonZero(buttonZeroPin);
 
-*/
-
+// AC_HMC5883L::GainMode gain = AC_HMC5883L::GAIN_0_8; // use for north-pointing compass
+AC_HMC5883L::GainMode gain = AC_HMC5883L::GAIN_4_0; // higher gain needed for a magnet
 AC_HMC5883L magneto;
 
 const long durationCalibration = 15000; // milliseconds
+const boolean skipCalibration = false; // set true to skip calibration
+
+float angleOffset = 0.;
 long dateCalibrationStart;
 boolean isCalibrating;
+long dateLastShow = 0;
 
+float getAngleRaw() {
+  Vector v = magneto.getVector();
+  return v.phi();
+}
+
+void rotZero() {
+  Serial.println("Assign to zero");
+  angleOffset = - getAngleRaw();
+}
+
+float getAngle() {
+  float a = getAngleRaw() + angleOffset;
+  a = fmod(a + 6 * M_PI, 2 * M_PI);
+  if (a > M_PI) 
+    a -= 2 * M_PI;
+  return a;
+}
 
 void setup()
 {
-  // TODO --TEMPORARY, due to the current wiring of the device
-  {
-    pinMode(3, OUTPUT);
-    pinMode(4, OUTPUT);
-    pinMode(5, OUTPUT);
-    digitalWrite(3, LOW);
-    digitalWrite(4, HIGH);
-    digitalWrite(5, LOW);
-  }
-
   Serial.begin(9600);   
   Serial.println("Starting up");
 
+#ifdef POWER_CONTROL_PIN
+    
+    // TEMPORARY (only because other devices need to be off)
+    digitalWrite(3, LOW);
+    digitalWrite(4, LOW);
+    digitalWrite(5, LOW);
+    /**/
+    pinMode(POWER_CONTROL_PIN, OUTPUT);
+    digitalWrite(POWER_CONTROL_PIN, HIGH);
+    delay(50);
+#endif
+
+  buttonZero.begin();
+  buttonZero.onUp(rotZero);
+
   magneto.begin(); 
-   //magneto.setGainMode(AC_HMC5883L::GAIN_8_1); // todo : TEMPORARY
-  magneto.setGainMode(AC_HMC5883L::GAIN_0_8);
-
-//  magneto.setGainMode(AC_HMC5883L::GAIN_2_5);
+  magneto.setGainMode(gain);
   
-  isCalibrating = true;
-  dateCalibrationStart = millis();
+  if (skipCalibration) {
+    isCalibrating = false;
+    // for debugging, these values can be used instead of calibration
+    magneto.setOffset(132.500, 233.500, -91.000);
+    magneto.setScale(1.000,   0.910,   1.095);
+  } else {
+    isCalibrating = true;
+    dateCalibrationStart = millis();
+    Serial.println("Starting calibration: rotate slowly all around for 15 seconds.");
+    magneto.beginCalibration();
+  }
 
-  Serial.println("Starting calibration: rotate slowly all around for 15 seconds.");
-  magneto.beginCalibration();
-  delay(1000);
+  delay(50);
 }
   
 void displayFloat(float value, int nbChars, int precision) {
@@ -63,20 +109,14 @@ void displayFloat(float value, int nbChars, int precision) {
   Serial.print(buffer);
 }
 
-long dateLastShow = 0;
-
-int nb = 0;
-Vector sum = Vector();
 
 void loop()
 {
+  buttonZero.poll();
+
   if (isCalibrating) {
     magneto.stepCalibration();
   }
-
-  nb++;
-  sum = sum + magneto.measureGainAdjustedVector();
-
 
   if (isCalibrating && millis() - dateLastShow > 200) {
     dateLastShow = millis();
@@ -121,9 +161,8 @@ void loop()
     Serial.print(", ");
     displayFloat(offset.z, 7, 3);
     Serial.println("");
-    /*
-     */
-   Serial.print("Setting scale: ");
+
+    Serial.print("Setting scale: ");
     displayFloat(scale.x, 7, 3);
     Serial.print(", ");
     displayFloat(scale.y, 7, 3);
@@ -136,9 +175,9 @@ void loop()
     dateLastShow = millis();
 
     magneto.update();
-    Vector v = magneto.getVector();
+    float a = getAngle();
     Serial.print("XY-heading: ");
-    displayFloat(v.phi() * RAD_TO_DEG, 7, 1);
+    displayFloat(a * RAD_TO_DEG, 7, 1);
     Serial.print("\t");
 
     Vector m = magneto.measureCalibratedVector();
@@ -150,48 +189,6 @@ void loop()
     Serial.print("\t");
     Serial.print((int) m.z);
     Serial.println("");
-
-  /*
-Setting offset: -65.000, 190.500, -580.000
-Setting scale:   1.000,   0.987,   5.373
-
- */
-
-
-/*
-
-    Serial.print("average: ");
-    displayFloat(sum.phi() * RAD_TO_DEG, 7, 1);
-    Serial.println("");
-
-    sum = Vector();
-    nb = 0;
-*/
-
-
-/*
-        // display of raw values
-    Vector r = magneto.measureRawVector();
-    Serial.print("Raw: ");
-    Serial.print("\t");
-    Serial.print((int) r.x);
-    Serial.print("\t");
-    Serial.print((int) r.y);
-    Serial.print("\t");
-    Serial.print((int) r.z);
-    Serial.println("");
-
-*/
-         /*
-
-    Serial.print(" \tField: ");
-    displayFloat(v.x, 7, 3);
-    Serial.print(" ");
-    displayFloat(v.y, 7, 3);
-    Serial.print(" ");
-    displayFloat(v.z, 7, 3);
-    Serial.println("");
-   */
   }
 
   delay(20);

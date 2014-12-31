@@ -1,4 +1,7 @@
 /**
+
+ * ......TODO
+
  * AC_ADXL335 library for reading the ADXL335 Accelerometer.
  * Code by Arthur Chargueraud.
  * Distributed under LGPL (GNU Lesser General Public License version 3).

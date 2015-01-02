@@ -13,6 +13,10 @@
  *   E   C
  *   --D-- (DP)       (DP=decimal point)
  *
+ * Note that the device comes in two versions: one with a double dot in
+ * the middle for displaying a clock, and one with decimal points after
+ * every digit. The showFloat function only works with the latter device.
+ *
  */
 
 #ifndef AC_TM1637_h
@@ -74,9 +78,17 @@ public:
 
   /** 
     * Display a int between -999 and +9999.
-    * Indicate whether leadingZero should be displayed.
+    * The second argument can be set to force leading zeros.
     */
   void showInt(int value, boolean leadingZero = false);
+
+  /** 
+    * Display a float, for a specific precision (number of digits
+    * after the decimal point). For example, with precision 2, the range 
+    * of values that can be displayed is (-9.99, +99.99).
+    * Precision must be in the range [0,3].
+    */
+  void showFloat(float value, int precision, boolean leadingZero = false);
 
   /** 
     * Display a time, in the format "10:25".

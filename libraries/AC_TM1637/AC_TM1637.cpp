@@ -150,6 +150,21 @@ void AC_TM1637::showInt(int value, boolean leadingZero) {
   setSegments(segments);
 }
 
+void AC_TM1637::showFloat(float value, int precision, boolean leadingZero) {
+  byte segments[4];
+  if (precision < 0 || precision > 3) {
+    segmentsForInvalid(segments);
+    return;
+  }
+  for (int i = 0; i < precision; i++) {
+    value *= 10.;
+  }
+  int intValue = (int) lround(value);
+  segmentsForInt(intValue, leadingZero, segments);
+  segments[3-precision] |= POINT;
+  setSegments(segments);
+}
+
 void AC_TM1637::showTime(int hours, int minutes) {
   byte segs[4];
   if (hours < 0 || hours >= 99 || minutes < 0 || minutes >= 99) {

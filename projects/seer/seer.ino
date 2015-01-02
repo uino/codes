@@ -7,24 +7,38 @@
 #include <AC_UT390B.h>
 #include <AC_Button.h>
 
-const int buttonMeasurePin = 6;
-const int buttonZeroPin = 2;
+const int compassPowerPin = 4;
+
+const int buttonMeasurePin = 2;
+const int buttonZeroPin = 6;
 AC_Button buttonMeasure(buttonMeasurePin);
 AC_Button buttonZero(buttonZeroPin);
 AC_UT390B telemeter(&Serial1);
 AC_HMC5883L compass;
 
 
-
 const byte rotPin1 = A6; // lower
 const byte rotPin2 = A7; // upper
 
-float angleOffset = 0.;
+float compassOffset = 0.;
 float accelOffset = 0.;
 
-const int accelXPin = A0;
-const int accelYPin = A1;
-const int accelZPin = A2;
+const int accelPinX = A0;
+const int accelPinY = A1;
+const int accelPinZ = A2;
+
+// calibration = TODO rename.
+const int minX = 260;
+const int maxX = 396;
+const int minY = 260;
+const int maxY = 396;
+const int minZ = 280;
+const int maxZ = 415;
+
+// float version of the Arduino "map" function
+float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
 
 
 boolean ongoingMeasure = false;
@@ -33,15 +47,15 @@ float phi;
 float theta;
 float dist;
 Vector points[2];
-int nbPointsTargeted = 1;
+int nbPointsTargeted = 2;
 
+// TODO: move to lib vector
 Vector vectorOfSpherical(float dist, float phi, float theta) {
   float z = dist * sin(theta);
   float p = dist * cos(theta);
   float y = p * sin(phi);
   float x = p * cos(phi);
-  Vector v = { x, y, z };
-  return v;
+  return Vector(x, y, z);
 }
 
 void printVector(Vector v) {
@@ -53,9 +67,9 @@ void printVector(Vector v) {
   Serial.print(v.z, 2);
 }
 
+// TODO: libe
 Vector vectorSubstract(Vector v1, Vector v2) {
-  Vector v = { v1.x - v2.x, v1.y - v2.y, v1.z - v2.z };
-  return v;
+  return Vector(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
 }
 
 float vectorNorm(Vector v) {
@@ -66,27 +80,40 @@ float vectorDist(Vector v1, Vector v2) {
   return vectorNorm(vectorSubstract(v1, v2));
 }
 
-
-
 float getAccelAngleRaw() {
-  int xRead = analogRead(accelXPin);
-  int yRead = analogRead(accelYPin);
-  // not used int zRead = analogRead(zPin);
-  int vmin = 257;
-  int vmax = 397;
-  float x = map(xRead, vmin, vmax, -1000, 1000);
-  float y = map(yRead, vmin, vmax, -1000, 1000);
-  return - atan2(x, y); // due to placement of accel
+  int x = analogRead(accelPinX);
+  int y = analogRead(accelPinY);
+  int z = analogRead(accelPinZ);
+  float xg = mapFloat(x, minX, maxX, 1., -1);
+  float yg = mapFloat(y, minY, maxY, 1., -1);
+  float zg = mapFloat(z, minZ, maxZ, 1., -1);
+  float a = atan2(yg, xg) + M_PI/2;
+  return a;
 }
 
 float getAccelAngle() {
-   return getAccelAngleRaw(); 
+   return getAccelAngleRaw(); // + accelOffset
+}
+
+float getCompassAngleRaw() {
+  compass.update();
+  return compass.getHeading();
+}
+
+float getCompassAngle() {
+  float a = getCompassAngleRaw() + compassOffset;
+  a = fmod(a + 6 * M_PI, 2 * M_PI);
+  return a;
+}
+
+void rotZero() {
+  compassOffset = - getCompassAngleRaw();
+  // accelOffset = - getAccelAngleRaw();
 }
 
 void startMeasure() {
   telemeter.requestMeasure();
-  compass.update();
-  float anglePhi = compass.getHeading();
+  float anglePhi = getCompassAngle();
   phi = anglePhi;
   float angleTheta = getAccelAngle();
   theta = angleTheta;
@@ -97,6 +124,7 @@ void startMeasure() {
     Serial.print(RAD_TO_DEG * anglePhi, 1);
     Serial.print("\t  Theta: ");
     Serial.print(RAD_TO_DEG * angleTheta, 1);
+    Serial.print("\t");
   }
 }
 
@@ -145,27 +173,6 @@ void completeMeasure() {
   }
 }
 
-float getRotAngleRaw() {
-  int v1 = analogRead(rotPin1);
-  int v2 = 1023 - analogRead(rotPin2);
-  float d1 = 300.0;
-  float d2 = 300.0;
-  float d = (d1 * v1 / 1023.0) + (d2 * v2 / 1023.0);
-  float a = d / 180 * M_PI;
-  return a;
-}
-
-
-void rotZero() {
-  angleOffset = - getRotAngleRaw();
-  // accelOffset = - getAccelAngleRaw();
-}
-
-float getRotAngle() {
-  float a = getRotAngleRaw() + angleOffset;
-  a = fmod(a + 6 * M_PI, 2 * M_PI);
-  return a;
-}
 
 void setup()
 {
@@ -177,23 +184,26 @@ void setup()
     pinMode(5, OUTPUT);
     digitalWrite(3, LOW);
     digitalWrite(4, LOW);
-    digitalWrite(5, HIGH);
+    digitalWrite(5, LOW);
   }
+
+  digitalWrite(compassPowerPin, HIGH);
 
   Serial.begin(9600);   
   Serial.println("Starting up");
 
   compass.begin();
-/*
-  compass.setOffset(- ( -0.060), - (-0.178), 0);
-  compass.setScale(1/0.233, 1/0.280, 0);
-  compass.setOffset(- ( -0.047), - (-0.195), 0);
-  compass.setScale(1/0.180, 1/0.213, 0);
-  compass.setOffset(- ( -0.045), - (-0.194), 0);
-  compass.setScale(1/0.181, 1/0.211, 0);
-*/
-  compass.setOffset(0.057, 0.177, 0);
-  compass.setScale(4.129, 3.603, 0);
+  /* earth
+  compass.setGainMode(AC_HMC5883L::GAIN_0_8);
+  compass.setOffset(144.500, 155.000, 349.000);
+  compass.setScale(1.000, 0.866, 9.264);
+  compass.setDeclinationDegrees(1, 24);
+  */
+
+  // magnet
+  compass.setGainMode(AC_HMC5883L::GAIN_4_0);
+  compass.setOffset(-221.500, 100.500, -46.500);
+  compass.setScale(1.000,   1.015,   5.102);
 
   // flip x-axis of compass
   /*
@@ -201,9 +211,6 @@ void setup()
   scale.x = - scale.x;
   compass.setScale(scale);
   */
-
-
-  compass.setDeclinationDegrees(1, 24);
 
   telemeter.begin();
   telemeter.setOffset(-0.05);
@@ -214,9 +221,8 @@ void setup()
   buttonMeasure.onUp(queryMeasure);
 
   buttonZero.begin();
-  // buttonZero.onUp(rotZero);
-
-  buttonZero.onUp(reportPoint);
+  buttonZero.onUp(rotZero);
+  // buttonZero.onUp(reportPoint);
 }
 
 void displayFloat(float value, int nbChars, int precision) {
@@ -243,27 +249,18 @@ void loop()
   buttonZero.poll();
 
   completeMeasure();
-
-  /*
+/*
   if (millis() - lastDisp > 500) {
     compass.update();
-    float accel = RAD_TO_DEG * getAccelAngle();
-    float angleCompass = RAD_TO_DEG * compass.getHeading();
-    float angleRot = RAD_TO_DEG * getRotAngle();
-    float diff = fmod(angleCompass - angleRot + 360, 360);
-    diff = min(diff, 360-diff);
-    Serial.print("Accel: ");
-    displayFloat(accel, 6, 1);
-    Serial.print("\tPotar: ");
-    displayFloat(angleRot, 6, 1);
-    Serial.print("\tCompass: ");
-    displayFloat(angleCompass, 6, 1);
-    Serial.print("\tDiff: ");
-    displayFloat(diff, 6, 1);
+    float accelAngle = RAD_TO_DEG * getAccelAngle();
+    float compassAngle = RAD_TO_DEG * getCompassAngle();
+    Serial.print("Phi: ");
+    displayFloat(compassAngle, 6, 1);
+    Serial.print("   Theta: ");
+    displayFloat(accelAngle, 6, 1);
     Serial.println();
   }
-  */
-
+*/
   if (idMeasure == nbPointsTargeted) {
 
     if (nbPointsTargeted == 2) {
@@ -305,3 +302,14 @@ void loop()
      Serial.println(a);
 
 */
+
+  /*
+  int v1 = analogRead(rotPin1);
+  int v2 = 1023 - analogRead(rotPin2);
+  float d1 = 300.0;
+  float d2 = 300.0;
+  float d = (d1 * v1 / 1023.0) + (d2 * v2 / 1023.0);
+  float a = d / 180 * M_PI;
+  return a;
+  
+  */

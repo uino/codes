@@ -113,8 +113,8 @@ PROGMEM const prog_byte AC_Nokia5100::ASCII[] =
     0x78, 0x46, 0x41, 0x46, 0x78 // 0x7f DEL
 };
 
-AC_Nokia5100::AC_Nokia5100(int scePin, int rstPin, int dcPin,
-                           int sdinPin, int sclkPin, int blPin)
+AC_Nokia5100::AC_Nokia5100(byte scePin, byte rstPin, byte dcPin,
+                           byte sdinPin, byte sclkPin, byte blPin)
 {
   this->scePin = scePin;
   this->rstPin = rstPin;

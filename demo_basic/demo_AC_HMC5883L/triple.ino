@@ -1,7 +1,7 @@
 /**
  * Demo for the AC_HMC5883 library.
  * Code by Arthur Chargueraud.
- * This code is GPL.
+ * This code is GNU GPL v3.
  *
  * Use 3 magnetormeters from the same board
  *

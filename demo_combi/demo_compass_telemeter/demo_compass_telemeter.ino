@@ -1,7 +1,7 @@
 /**
  * Demo for using the AC_HMC5883L library to calibrate the magneto-meter.
  * Code by Arthur Chargueraud.
- * This code is GPL.
+ * This code is GNU GPL v3.
  *
  * The demo begins with a calibration phase during which the sensor
  * should be rotated in all directions for 15 seconds.

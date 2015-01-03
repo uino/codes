@@ -1,7 +1,7 @@
 /**
  * Demo for the AC_HMC5883L library to control a magnetometer.
  * Code by Arthur Chargueraud.
- * This code is GPL.
+ * This code is GNU GPL v3.
  *
  * This demo only reports raw values as reported by the sensor.
  * Make sure to use the appopriate gain value. GAIN_0_8 works

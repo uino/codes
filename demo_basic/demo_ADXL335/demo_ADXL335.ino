@@ -1,7 +1,7 @@
 /**
  * Demo for the ADXL335 accelerometer.
  * Code by Arthur Chargueraud.
- * This code is GPL.
+ * This code is GNU GPL v3.
  *
  * Display raw values (as reported by the device)
  * and calibrated values (expressed relative to local gravity).

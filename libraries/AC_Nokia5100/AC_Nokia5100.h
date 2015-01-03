@@ -57,7 +57,7 @@ public:
   static const int WHITE = 0;  // For drawing pixels. A 0 draws white.
   static const int BLACK = 1;  // A 1 draws black.
 
-  AC_Nokia5100(int scePin, int rstPin, int dcPin, int sdinPin, int sclkPin, int blPin);
+  AC_Nokia5100(byte scePin, byte rstPin, byte dcPin, byte sdinPin, byte sclkPin, byte blPin);
 
   /** 
     * Must be called before using the screen
@@ -167,12 +167,12 @@ public:
 
 private:
 
-  int scePin;
-  int rstPin;
-  int dcPin;
-  int sdinPin;
-  int sclkPin;
-  int blPin;
+  byte scePin;
+  byte rstPin;
+  byte dcPin;
+  byte sdinPin;
+  byte sclkPin;
+  byte blPin;
    
   /* PCD8544-specific definitions */
   static const int LCD_COMMAND = 0;

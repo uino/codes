@@ -1,7 +1,7 @@
 /**
  * Logger project.
  * Code by Anatole and Arthur Chargueraud
- * GNU GPL code.
+ * This code is GNU GPL v3.
  *
  * Goal is to measure values periodically from sensors,
  * (e.g., temperature/humidity using an SHT1x sensor)

@@ -18,7 +18,7 @@ AC_RotatingPot::AC_RotatingPot(byte inputPin)
   ignoring = 0;
 }
 
-AC_RotatingPot::AC_RotatingPot(int inputPin, int sensitivity, boolean inverted) : AC_RotatingPot(inputPin)
+AC_RotatingPot::AC_RotatingPot(byte inputPin, int sensitivity, boolean inverted) : AC_RotatingPot(inputPin)
 {
   setSensitivity(sensitivity);
   rotationInverted(inverted);

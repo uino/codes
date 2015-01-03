@@ -1,6 +1,6 @@
 /* 
  * Arthur Chargueraud
- * This code is GNU GPL.
+ * This code is GNU GPL v3.
  *
  * Implementation of a menu displayed on a AC_Nokia5100
  * and manipulated using a rotatingPotentiometer (a

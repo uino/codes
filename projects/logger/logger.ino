@@ -4,7 +4,7 @@
 /**
  * Logger project.
  * Code by Anatole and Arthur Chargueraud
- * GNU GPL code.
+ * This code is GNU GPL v3.
  *
  * Goal is to measure values periodically from sensors,
  * (e.g., temperature/humidity using an SHT1x sensor)
@@ -16,9 +16,9 @@
  * when it is time to perform a measure. This allows for
  * a long-term battery usage of the logger.
  *
- *
- * TODO: currently the SD card conflicts with the LCD display
  */
+
+// #define USE_SCREEN 1
 
 #include <avr/pgmspace.h>
 #include <AC_RAM.h>
@@ -27,7 +27,11 @@
 #include <DS3232RTC.h> 
 #include <Time.h>
 #include <Wire.h>  
+
+#ifdef USE_SCREEN
 #include <AC_Nokia5100.h>
+#endif
+
 #include <AC_RotatingPot.h>
 #include <AC_Button.h>
 #include "defs.h"
@@ -38,9 +42,9 @@
 
 // Log file parameters
 const boolean resetLogOnSetup = true; // TODO!!!
-const boolean showSDContent = true;
+const boolean showSDContent = false;
 char* filename = "logger.txt"; // name of log file (8+3 characters max)
-boolean SDused = false; // indicates whether SD card should/can be used
+boolean SDused = true; // indicates whether SD card should/can be used
 
 // Serial : for debugging to PC
 const long serialBaudRate = 115200; // faster than using 9600
@@ -52,14 +56,16 @@ AC_Button button(2);
 const int buttonSensitivity = 300;
 
 // Rotating potentiometer
-int rotPin = A0;
+byte rotPin = A0;
 const int rotSensitivity = 20; 
 const boolean rotInverted = true; 
 AC_RotatingPot rot(rotPin, rotSensitivity, rotInverted);
 
 // Nokia5100 : for display
 // (pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin)
+#ifdef USE_SCREEN
 AC_Nokia5100 screen(3, 4, 5, 11, 13, 7);
+#endif
 
 // SHT1x : for measuring temperature and humidity
 // (pins: dataPin, clockPin)
@@ -75,6 +81,7 @@ const int SDhardwareCSPin = 10;
 // Measure configuration
 // see nbMeasures in defs.h
 const char measureNames[nbMeasures][7] = { "humid.", "t_SHT1", "t_3232" }; // 6 chars exactly for each
+// const char measureNames[nbMeasures][7] = { "h", "t", "t" }; // 6 chars exactly for each
 const int floatPrecision = 3; // nb digits after decimal point
 
 
@@ -130,8 +137,10 @@ void printMeasureOnSerial(Record& r) {
 //*****************************************************************
 /* LCD functions */
 
+#ifdef USE_SCREEN
 const int screenNbRows = AC_Nokia5100::LCD_ROWS;
 const int screenNbCols = AC_Nokia5100::LCD_COLS; 
+#endif
 const int bufferRowLength = 30; // = screenNbCols+1 (but using more characters for safety)
 
 // prints a two-digit nonnegative int into a given target string (of length >= 2)
@@ -171,6 +180,7 @@ void string_of_float(float value, int nbChars, int precision, char* target) {
 }
 
 void displayMeasures(Record r) {
+#ifdef USE_SCREEN
   // TODO: fix bugs
   char buffer[bufferRowLength];
   screen.clearDisplay(); 
@@ -184,6 +194,7 @@ void displayMeasures(Record r) {
     screen.setString(buffer, m+1, 9);
   }
   screen.updateDisplay(); 
+#endif
 }
 
 
@@ -387,7 +398,6 @@ const fstring panelItems[] PROGMEM = {
   panelItems1_2, 
   };
 
-
 // TODO: could be in flash memory as well if needed
 const int nbPanels = 2;
 const PanelDescr panelDescrs[nbPanels] = { 
@@ -401,6 +411,7 @@ const PanelDescr panelDescrs[nbPanels] = {
 
 // TODO: move to library
 
+#ifdef USE_SCREEN
 // assumes buffer length >= bufferRowLength, and storing null-terminated string.
 void completeLineWithSpaces(char* buffer) {
   int len = strlen(buffer);
@@ -423,6 +434,7 @@ void displayChoices(const fstring* choices, int firstChoice, int nbChoices, int 
   }
   screen.updateDisplay();
 }
+#endif
 
 const int panelRoot = 0;
 int panel = panelRoot;
@@ -434,6 +446,7 @@ long dateLastDisplayMeasures = 0;
 
 
 void displayPanel() {
+#ifdef USE_SCREEN
   // Serial.println(F("display menu"));
   // Serial.println(menuCurrent);
   if (panel == 0 || panel == 1) {
@@ -451,6 +464,7 @@ void displayPanel() {
       displayMeasures(currentMeasure);
     }
   }
+#endif
 }
 
 void enterPanel(int idPanel) {
@@ -511,19 +525,45 @@ void setup()
   }
   reportSRAM();
 
+#ifdef USE_SCREEN
   // LCD screen
   screen.begin();
   screen.setContrast(60);
-  screen.setString("Loading...", 0, 0);
+  screen.setString("Load", 0, 0);
   screen.updateDisplay(); 
+  delay(500);
+#endif
 
   // SD
   if (SDused) {
     pinMode(SDhardwareCSPin, OUTPUT); 
     if (! SD.begin(SDselectPin)) {
-      if (serialUsed)
-        Serial.println("Card failed or missing");
+      if (serialUsed) {
+        Serial.println(F("Card failed or missing"));
+      }
       SDused = false;
+    } else {
+      if (resetLogOnSetup) {
+        Serial.println(F("Card reset"));
+        /**/
+        File myFile = SD.open("example.txt", FILE_WRITE);
+        if (myFile) {
+          #ifdef USE_SCREEN
+          screen.setString("SD ok", 0, 0);
+          screen.updateDisplay(); 
+          #endif
+          Serial.println(F("ok"));
+        } else {
+          #ifdef USE_SCREEN
+          screen.setString("SD bug", 0, 0);
+          screen.updateDisplay(); 
+          #endif
+          Serial.println(F("bug"));
+        }
+        myFile.close();
+        
+        resetLog();
+      }
     }
   }
 
@@ -551,6 +591,7 @@ void setup()
 
   // Menu
   enterPanel(panelRoot);
+  reportSRAM();
 }
 
 
@@ -563,6 +604,7 @@ void loop()
 {
   long dateNow = now(); 
   if (dateNow - dateLastRecord > 3) { // record every 3 seconds
+    reportSRAM();
     dateLastRecord = dateNow;
     Serial.println(F("record"));
     makeMeasures(currentMeasure);
@@ -571,13 +613,14 @@ void loop()
     }
     if (SDused) {
       writeRecordToLog(currentMeasure); 
-      /*if (showSDContent) {
+      Serial.println(F("saved"));
+      if (showSDContent) {
         readFileSerialPrint();
-      }*/
+      }
     }
   }
 
-  Serial.println(F("wait"));
+  // Serial.println(F("wait"));
   button.poll();
   rot.poll();
   displayPanel();

@@ -6,12 +6,16 @@
  */
 
 #include <DS3232RTC.h> 
-#include <Time.h>
-#include <Wire.h>  
 
 DS3232RTC ds3232;
 
-void initializeTime() {
+//----------------------------------------------------------------
+// To register a time in the ds3232, set the boolean below to true
+// and configure the data in the next function
+
+const boolean setInitTime = false;
+
+void setInitialTime() {
   tmElements_t initTime;
   initTime.Second = 9;
   initTime.Minute = 9;
@@ -21,10 +25,10 @@ void initializeTime() {
   initTime.Month = 4;
   initTime.Year = 44;
   ds3232.write(initTime);
-  // alternative for passing directly a time_t
-  // ds3232.set(makeTime(initTime));
-  Serial.println("Time initialized");
+  // alternative: ds3232.set(makeTime(initTime));
 }
+
+//----------------------------------------------------------------
 
 void printTime(time_t t) {
   Serial.print(year(t)); 
@@ -54,7 +58,10 @@ void setup()
   Serial.println("Starting up");
 
   // set a given time into the ds3232
-  initializeTime();
+  if (setInitTime) {
+    setInitialTime();
+    Serial.println("Time initialized");
+  }
 
   // calls to ensure that the value now() is read from the
   // ds3232 every 300 seconds, and ajusted using millis()

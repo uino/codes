@@ -8,17 +8,18 @@
  *
  * Goal is to measure values periodically from sensors,
  * (e.g., temperature/humidity using an SHT1x sensor)
- * log the values on a SD card, and provide an interface
- * for viewing results on a Nokia5110 screen. Navigation in
- * the menus is performed using a button and a potentiometer.
+ * log the values on a SD card, and displays the
+ * measures on a Nokia5110 screen. 
  *
- * An DS3232 alarm is used to wake up the Arduino board
- * when it is time to perform a measure. This allows for
- * a long-term battery usage of the logger.
+ *
+ * // Not yet implemented:
+ *   An DS3232 alarm is used to wake up the Arduino board
+ *   when it is time to perform a measure. This allows for
+ *   a long-term battery usage of the logger.
  *
  */
 
-// #define USE_SCREEN 1
+#define USE_SCREEN 1
 
 #include <avr/pgmspace.h>
 #include <AC_RAM.h>
@@ -29,7 +30,7 @@
 #include <Wire.h>  
 
 #ifdef USE_SCREEN
-#include <AC_Nokia5100.h>
+#include <AC_Nokia5100_light.h>
 #endif
 
 #include <AC_RotatingPot.h>
@@ -40,9 +41,11 @@
 //*****************************************************************
 /* Configuration */
 
+// Debugging parameters
+const boolean resetLogOnSetup = true; // true only for debugging
+const boolean showSDContent = false;  // true only for debugging
+
 // Log file parameters
-const boolean resetLogOnSetup = true; // TODO!!!
-const boolean showSDContent = false;
 char* filename = "logger.txt"; // name of log file (8+3 characters max)
 boolean SDused = true; // indicates whether SD card should/can be used
 
@@ -64,7 +67,7 @@ AC_RotatingPot rot(rotPin, rotSensitivity, rotInverted);
 // Nokia5100 : for display
 // (pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin)
 #ifdef USE_SCREEN
-AC_Nokia5100 screen(3, 4, 5, 11, 13, 7);
+AC_Nokia5100_light screen(3, 4, 5, 11, 13, 7);
 #endif
 
 // SHT1x : for measuring temperature and humidity
@@ -85,22 +88,57 @@ const char measureNames[nbMeasures][7] = { "humid.", "t_SHT1", "t_3232" }; // 6 
 const int floatPrecision = 3; // nb digits after decimal point
 
 
-
 //*****************************************************************
-/* Types of measures */
+/* Program variables */
 
-// current measure
+// Current measure data structure
 Record currentMeasure;
 
+// Control of actions
+long dateLastRecord = 0;
+long dateLastScreen = 0;
+
 
 //*****************************************************************
-/* Memory functions */
+/* Performing measures */
+
+void makeMeasures(Record& r) {
+  r.date = ds3232.get(); 
+  float* v = r.values;
+  v[0] = sht1x.readHumidity();
+  v[1] = sht1x.readTemperatureC();
+  v[2] = ds3232.temperature() / 4.0; // - the ds3232 returns an int equal to 4 times the temperature.
+}
+
+//*****************************************************************
+/* Debugging functions */
 
 void reportSRAM() {
   if (!serialUsed) 
     return;
   Serial.print(F("SRAM free: "));
   Serial.println(AC_RAM::getFree());
+}
+
+void readFileSerialPrint() { // TODO: move to library
+  if (! SDused)
+    return;
+  if (SD.exists(filename)) {
+    File file = SD.open(filename, FILE_READ);
+    if (! file) {
+      Serial.println(F("readFileSerialPrint: error opening file"));
+    } else {
+      Serial.println(F("=========begin contents========="));
+      while (file.available()) {
+        byte v = file.read();
+        Serial.write(v);
+      }
+      Serial.println(F("=========end contents========="));
+      file.close();
+    }
+  } else {
+    Serial.println(F("readFileSerialPrint: file not found"));
+  }
 }
 
 
@@ -138,8 +176,8 @@ void printMeasureOnSerial(Record& r) {
 /* LCD functions */
 
 #ifdef USE_SCREEN
-const int screenNbRows = AC_Nokia5100::LCD_ROWS;
-const int screenNbCols = AC_Nokia5100::LCD_COLS; 
+const int screenNbRows = AC_Nokia5100_light::LCD_ROWS;
+const int screenNbCols = AC_Nokia5100_light::LCD_COLS; 
 #endif
 const int bufferRowLength = 30; // = screenNbCols+1 (but using more characters for safety)
 
@@ -181,7 +219,6 @@ void string_of_float(float value, int nbChars, int precision, char* target) {
 
 void displayMeasures(Record r) {
 #ifdef USE_SCREEN
-  // TODO: fix bugs
   char buffer[bufferRowLength];
   screen.clearDisplay(); 
   timeIntoString(r.date, buffer, false);
@@ -200,27 +237,6 @@ void displayMeasures(Record r) {
 
 //*****************************************************************
 /* File functions */
-
-void readFileSerialPrint() { // TODO: move to library
-  if (! SDused)
-    return;
-  if (SD.exists(filename)) {
-    File file = SD.open(filename, FILE_READ);
-    if (! file) {
-      Serial.println(F("readFileSerialPrint: error opening file"));
-    } else {
-      Serial.println(F("=========begin contents========="));
-      while (file.available()) {
-        byte v = file.read();
-        Serial.write(v);
-      }
-      Serial.println(F("=========end contents========="));
-      file.close();
-    }
-  } else {
-    Serial.println(F("readFileSerialPrint: file not found"));
-  }
-}
 
 void writeTime(File file, time_t t) {
   file.print(year(t)); 
@@ -260,57 +276,6 @@ void writeLogHeader() {
   file.close();
 }
 
-void resetLog() {
-  if (! SDused)
-    return;
-  SD.remove(filename);
-  writeLogHeader();
-}
-
-void readRecordFromFile(File file, Record& r) {
-  // read and ignore the human readable date
-  String date = file.readStringUntil('\t');
-  String time = file.readStringUntil('\t');
-  // read the date and the measures into the record
-  long unixtime = file.parseInt();
-  r.date = unixtime;
-  for (int m = 0; m < nbMeasures; m++) {
-    float value = file.parseFloat();
-    r.values[m] = value;
-  }
-  // read what remains of the line
-  file.readStringUntil('\n');
-}
-
-// returns the number effectively read
-int readRecordsFromFile(File file, int maxNbRecords, Record* rs) {
-  int count = 0;
-  while (file.available()) {
-    // ignore lines that start with a '#' symbol
-    if (file.peek() == '#') {
-      file.readStringUntil('\n');
-      continue;
-    }
-    // other lines are parsed as records
-    readRecordFromFile(file, rs[count]);
-    // for debug: printMeasureOnSerial(r);
-    count++;
-    if (count >= maxNbRecords)
-      return count;
-  }
-  return count;
-}
-
-/*
-void readRecordsFromLog() {
-  File file = openLog(FILE_READ);
-  if (! file)
-    return;
-  // nbHistory = readRecordsFromFile(file, maxHistory, history);
-  file.close();
-}
-*/
-
 void writeRecordToFile(File file, Record& r) {
   time_t t = r.date;
   writeTime(file, t);
@@ -332,189 +297,32 @@ void writeRecordToLog(Record& r) {
   file.close();
 }
 
-
-//*****************************************************************
-/* Performing measures */
-// Remarks:
-// - date is read from the ds3232 time (without interpolation from "millis")
-
-void makeMeasures(Record& r) {
-  r.date = ds3232.get(); 
-  float* v = r.values;
-  v[0] = sht1x.readHumidity();
-  v[1] = sht1x.readTemperatureC();
-  v[2] = ds3232.temperature() / 4.0; // - the ds3232 returns an int equal to 4 times the temperature.
+void resetLog() {
+  if (! SDused)
+    return;
+  SD.remove(filename);
+  writeLogHeader();
 }
 
 
 //*****************************************************************
-/* Menu definition */
-
-
-const int panelItems0_size = 16;
-const char panelItems0_0[] PROGMEM = "disp. curve";
-const char panelItems0_1[] PROGMEM = "disp. submenu";
-const char panelItems0_2[] PROGMEM = "disp. all";
-const char panelItems0_3[] PROGMEM = "set a";
-const char panelItems0_4[] PROGMEM = "set b";
-const char panelItems0_5[] PROGMEM = "set c";
-const char panelItems0_6[] PROGMEM = "set b";
-const char panelItems0_7[] PROGMEM = "set d";
-const char panelItems0_8[] PROGMEM = "set e";
-const char panelItems0_9[] PROGMEM = "set f";
-const char panelItems0_10[] PROGMEM = "set g";
-const char panelItems0_11[] PROGMEM = "set h";
-const char panelItems0_12[] PROGMEM = "set i";
-const char panelItems0_13[] PROGMEM = "set j";
-const char panelItems0_14[] PROGMEM = "set k";
-const char panelItems0_15[] PROGMEM = "set l";
-
-const int panelItems1_size = 3;
-const char panelItems1_0[] PROGMEM = "set x-scale";
-const char panelItems1_1[] PROGMEM = "set y-scale";
-const char panelItems1_2[] PROGMEM = "set log params";
-
-
-const fstring panelItems[] PROGMEM = { 
-  panelItems0_0, 
-  panelItems0_1, 
-  panelItems0_2, 
-  panelItems0_3, 
-  panelItems0_4,  
-  panelItems0_5, 
-  panelItems0_6, 
-  panelItems0_7, 
-  panelItems0_8, 
-  panelItems0_9, 
-  panelItems0_10, 
-  panelItems0_11, 
-  panelItems0_12, 
-  panelItems0_13, 
-  panelItems0_14, 
-  panelItems0_15,
-
-  panelItems1_0, 
-  panelItems1_1, 
-  panelItems1_2, 
-  };
-
-// TODO: could be in flash memory as well if needed
-const int nbPanels = 2;
-const PanelDescr panelDescrs[nbPanels] = { 
-  { panelItems0_size, panelItems+0 },
-  { panelItems1_size, panelItems+panelItems0_size },
-  // { panelItems2_size, panelItems+panelItems0_size+panelItems1_size },
-  };
-
-//*****************************************************************
-/* Menu implementation */
-
-// TODO: move to library
-
-#ifdef USE_SCREEN
-// assumes buffer length >= bufferRowLength, and storing null-terminated string.
-void completeLineWithSpaces(char* buffer) {
-  int len = strlen(buffer);
-  for (int k = len; k < screenNbCols; k++) {
-    buffer[k] = ' ';
-  }
-  buffer[screenNbCols] = '\0';
-}
-
-void displayChoices(const fstring* choices, int firstChoice, int nbChoices, int selected) {
-  char buffer[bufferRowLength];
-  screen.clearDisplay();
-  for (int line = 0; line < nbChoices; line++) {
-    int item = firstChoice + line;
-    boolean whiteBackground = (item != selected);
-    fstring fline = ((fstring) pgm_read_word(& choices[item]));
-    strcpy_P(buffer, fline);
-    completeLineWithSpaces(buffer);
-    screen.setString(buffer, line, 0, whiteBackground);
-  }
-  screen.updateDisplay();
-}
-#endif
-
-const int panelRoot = 0;
-int panel = panelRoot;
-
-int menuCurrent = 0; // should be between 0 and nbPanelItems[panel]
-int menuPevious = -1;
-
-long dateLastDisplayMeasures = 0;
-
-
-void displayPanel() {
-#ifdef USE_SCREEN
-  // Serial.println(F("display menu"));
-  // Serial.println(menuCurrent);
-  if (panel == 0 || panel == 1) {
-    if (menuCurrent == menuPevious)
-      return; // if no change, nothing to do
-    int idPage = menuCurrent / screenNbRows;
-    int idFirst = idPage * screenNbRows;
-    PanelDescr descr = panelDescrs[panel];
-    int nbShown = min(screenNbRows, descr.nbItems - idFirst);
-    displayChoices(descr.items, idFirst, nbShown, menuCurrent);
-    menuPevious = menuCurrent;
-  } else if (panel == 100) {
-    long timeNow = millis(); 
-    if (timeNow - dateLastDisplayMeasures > 1000) { // display every 1 second
-      displayMeasures(currentMeasure);
-    }
-  }
-#endif
-}
-
-void enterPanel(int idPanel) {
-  Serial.println(F("enter panel"));
-  panel = idPanel;
-  menuPevious = -1;
-  rot.setModulo(panelDescrs[panel].nbItems);
-  rot.resetValue(0);
-}
+/* Control handlers */
 
 void shortClick() {
   Serial.println(F("short click"));
-  if (panel == 0) {
-    if (menuCurrent == 0) {
-      enterPanel(100);
-    } else if (menuCurrent == 1) {
-      enterPanel(1);
-    }
-  }
 }
 
 void longClick() {
   Serial.println(F("long click"));
-  if (panel == 1 || panel == 100) {
-    enterPanel(0);
-  }
 }
 
 void rotChange() {
-  menuCurrent = rot.getValue();
+  Serial.println(F("rot change"));
 }
 
 
 //*****************************************************************
 /* Setup */
-
-void initializeTime() {
-  tmElements_t initTime;
-  initTime.Second = 9;
-  initTime.Minute = 9;
-  initTime.Hour = 9;
-  initTime.Wday = 1; // day of week, sunday is day 1
-  initTime.Day = 11;
-  initTime.Month = 4;
-  initTime.Year = 44;
-  ds3232.write(initTime);
-  // alternative for passing directly a time_t
-  // ds3232.set(makeTime(initTime));
-  Serial.println(F("Time initialized"));
-}
 
 void setup()
 {
@@ -545,7 +353,6 @@ void setup()
     } else {
       if (resetLogOnSetup) {
         Serial.println(F("Card reset"));
-        /**/
         File myFile = SD.open("example.txt", FILE_WRITE);
         if (myFile) {
           #ifdef USE_SCREEN
@@ -577,10 +384,7 @@ void setup()
   button.onUp(shortClick);
   button.onUpLong(longClick);
 
-  // DS3232 set initial time
-  initializeTime();
-
-  // Time.h library (adjust from ds3232 every 300 seconds)
+  // Adjust from time from ds3232 every 300 seconds
   setSyncProvider(ds3232.get); 
   setSyncInterval(300); 
 
@@ -590,7 +394,6 @@ void setup()
   }
 
   // Menu
-  enterPanel(panelRoot);
   reportSRAM();
 }
 
@@ -598,22 +401,27 @@ void setup()
 //*****************************************************************
 /* Main loop */
 
-long dateLastRecord = 0;
-
 void loop()
 {
-  long dateNow = now(); 
-  if (dateNow - dateLastRecord > 3) { // record every 3 seconds
-    reportSRAM();
-    dateLastRecord = dateNow;
-    Serial.println(F("record"));
+  long dateNow = now(); // in seconds
+
+  // update screen if time to do so
+  if (dateNow - dateLastScreen > 1) { // measure and display every 1 second
+    dateLastScreen = dateNow;
+    Serial.println(F("Measurement performed"));
     makeMeasures(currentMeasure);
+    displayMeasures(currentMeasure);
+  }
+
+  // make measure if time to do so
+  if (dateNow - dateLastRecord > 3) { // record to SD every 3 seconds
+    dateLastRecord = dateNow;
     if (serialUsed) {
       printMeasureOnSerial(currentMeasure);
     }
     if (SDused) {
       writeRecordToLog(currentMeasure); 
-      Serial.println(F("saved"));
+      Serial.println(F("Measurement saved to SD"));
       if (showSDContent) {
         readFileSerialPrint();
       }
@@ -623,7 +431,6 @@ void loop()
   // Serial.println(F("wait"));
   button.poll();
   rot.poll();
-  displayPanel();
   delay(50);
 }
 

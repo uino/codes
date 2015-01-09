@@ -2,16 +2,16 @@
  * Arthur Chargueraud
  * This code is in the public domain.
  *
- * Demo associated with library "AC_Nokia5100".
+ * Demo associated with library "AC_Nokia5100_light".
  */
 
-#include <AC_Nokia5100.h>
+#include <AC_Nokia5100_light.h>
 
 // Nokia5100 : for display
 // (pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin)
-AC_Nokia5100 screen(3, 4, 5, 11, 13, 7);
+AC_Nokia5100_light screen(3, 4, 5, 11, 13, 7);
 
-const int nbRows = AC_Nokia5100::LCD_ROWS;
+const int nbRows = AC_Nokia5100_light::LCD_ROWS;
 
 void setup()
 {
@@ -24,10 +24,9 @@ void setup()
   Serial.println(6);
   for (int i = 0; i < nbRows; i++) {
     String line = String("line ") + String(i);
-    boolean bw = ((i%2)==1);
     Serial.println(i);
     Serial.println(line);
-    screen.setString(line, i, 0, bw);  
+    screen.setString(line, i, 0);  
   }
   screen.updateDisplay();
 }

@@ -10,6 +10,7 @@
  * Code that only uses serial: 1829 bytes free
  * Code that only uses serial and includes Arduino.h: 1793 bytes free.
  * Nokia5100 Screen: consumes 530 bytes (84*48/8 = 504 bytes; optimize: 14*6=94 bytes)
+ * Nokia5100_light Screen: consumes 110
  * RotatingPot: consumes 54
  * SHT1x: consumes 52
  * DS3232: consumes 252
@@ -21,9 +22,10 @@
 #define COUNT_ARDUINO
 
 // #define COUNT_SHT1x
+#define COUNT_SCREEN_LIGHT
 //#define COUNT_SCREEN  
 //#define COUNT_ROTATING_POT
-#define COUNT_DS3232
+//#define COUNT_DS3232
 
 #include <AC_RAM.h>
 
@@ -54,6 +56,11 @@ const int baseline = 1793; // free with only count-arduino and serial-report
   AC_Nokia5100 screen(3, 4, 5, 11, 13, 7);
 #endif
 
+#ifdef COUNT_SCREEN_LIGHT
+  #include <AC_Nokia5100_light.h>
+  AC_Nokia5100_light screen(3, 4, 5, 11, 13, 7);
+#endif
+
 #ifdef COUNT_ROTATING_POT
   #include <AC_RotatingPot.h>
   byte rotPin = A0;
@@ -80,10 +87,10 @@ void setup()
   Serial.println(AC_RAM::getFree());
 #endif
 
-#ifdef COUNT_SCREEN
+#if defined(COUNT_SCREEN) || defined(COUNT_SCREEN_LIGHT)
   screen.begin();
   screen.setContrast(60);
-  screen.clearDisplay(screen.WHITE);
+  screen.clearDisplay();
   screen.setString("X", 0, 0);
   screen.updateDisplay();
   Serial.print("Screen consumes: ");

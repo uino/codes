@@ -9,7 +9,7 @@
 
 // Nokia5100 : for display
 // (pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin)
-AC_Nokia5100 screen(3, 4, 5, 11, 13, 8);
+AC_Nokia5100 screen(3, 4, 5, 11, 13, 7);
 
 const int nbRows = AC_Nokia5100::LCD_ROWS;
 

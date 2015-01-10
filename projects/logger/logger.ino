@@ -1,6 +1,3 @@
-// out of memory !!
-
-
 /**
  * Logger project.
  * Code by Anatole and Arthur Chargueraud
@@ -19,8 +16,11 @@
  *
  */
 
-#define USE_SCREEN 1
+// #define ARTHUR
+#define USE_SCREEN 
 
+#include <Arduino.h>
+#include <SPI.h>
 #include <avr/pgmspace.h>
 #include <AC_RAM.h>
 #include <SD.h>
@@ -28,14 +28,13 @@
 #include <DS3232RTC.h> 
 #include <Time.h>
 #include <Wire.h>  
+#include <AC_RotatingPot.h>
+#include <AC_Button.h>
+#include "defs.h"
 
 #ifdef USE_SCREEN
 #include <AC_Nokia5100_light.h>
 #endif
-
-#include <AC_RotatingPot.h>
-#include <AC_Button.h>
-#include "defs.h"
 
 
 //*****************************************************************
@@ -67,7 +66,12 @@ AC_RotatingPot rot(rotPin, rotSensitivity, rotInverted);
 // Nokia5100 : for display
 // (pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin)
 #ifdef USE_SCREEN
-AC_Nokia5100_light screen(3, 4, 5, 11, 13, 7);
+#ifdef ARTHUR
+const int blPin = 8;
+#else 
+const int blPin = 7;
+#endif
+AC_Nokia5100_light screen(3, 4, 5, 11, 13, blPin);
 #endif
 
 // SHT1x : for measuring temperature and humidity
@@ -105,9 +109,15 @@ long dateLastScreen = 0;
 void makeMeasures(Record& r) {
   r.date = ds3232.get(); 
   float* v = r.values;
+#ifdef ARTHUR
+  v[0] = 0;
+  v[1] = 1;
+  v[2] = 2;
+#else 
   v[0] = sht1x.readHumidity();
   v[1] = sht1x.readTemperatureC();
   v[2] = ds3232.temperature() / 4.0; // - the ds3232 returns an int equal to 4 times the temperature.
+#endif
 }
 
 //*****************************************************************
@@ -337,6 +347,7 @@ void setup()
   // LCD screen
   screen.begin();
   screen.setContrast(60);
+  screen.clearDisplay(); 
   screen.setString("Load", 0, 0);
   screen.updateDisplay(); 
   delay(500);

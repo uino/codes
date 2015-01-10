@@ -29,7 +29,6 @@ public:
   //   void setContrast(byte contrast);
   //   void invertDisplay();
 
-
   /** 
     * Must be called to propagate any change to the screen
     * (it writes the content of the array displayMap to the device)
@@ -71,7 +70,7 @@ private:
   We use charMap[col + LCD_COLS * row] to denote the char at pos (row,col).
   */
 
-  byte charMap[LCD_COLS * LCD_ROWS];
+  char charMap[LCD_COLS * LCD_ROWS];
 
 };
 

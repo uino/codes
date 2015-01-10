@@ -22,7 +22,8 @@ void AC_Nokia5100_light::setString(char* dString, int row, int col)
 {
   while (*dString != 0x00) // loop until null terminator
   {
-    setChar(*dString++, row, col);
+    setChar(*dString, row, col);
+    dString++;
     col++;
     if (col >= LCD_COLS) { // Enables wrap around
       col = 0;
@@ -49,7 +50,7 @@ void AC_Nokia5100_light::setString(String str, int row, int col)
 void AC_Nokia5100_light::clearDisplay()
 {
   for (int i = 0; i < (LCD_COLS * LCD_ROWS); i++) {
-    charMap[i] = 0x20; // space
+    charMap[i] = ' '; // space
   }
 }
 
@@ -58,9 +59,13 @@ void AC_Nokia5100_light::updateDisplay()
   gotoXY(0, 0);
   for (int row = 0; row < LCD_ROWS; row++) {
     for (int col = 0; col < LCD_COLS; col++) {
-      char c = charMap[col + LCD_COLS * row];
-      byte bits = getASCII(c, col);
-      writeCmd(LCD_DATA, bits);
+      for (int i = 0; i < 5; i++) { // 5 columns (x) per character
+        char c = charMap[col + LCD_COLS * row];
+        byte bits = getASCII(c, i);
+        writeCmd(LCD_DATA, bits);
+      }
+      // plus one column of spacing
+      writeCmd(LCD_DATA, 0x00);
     }
   }
 }

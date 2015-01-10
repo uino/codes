@@ -16,7 +16,6 @@
  *
  */
 
-// #define ARTHUR
 #define USE_SCREEN 
 
 #include <Arduino.h>
@@ -41,8 +40,8 @@
 /* Configuration */
 
 // Debugging parameters
-const boolean resetLogOnSetup = true; // true only for debugging
-const boolean showSDContent = false;  // true only for debugging
+const boolean resetLogOnSetup = false; // reset SD file at startup
+const boolean showSDContent = true;  // true only for debugging
 
 // Log file parameters
 char* filename = "logger.txt"; // name of log file (8+3 characters max)
@@ -66,11 +65,7 @@ AC_RotatingPot rot(rotPin, rotSensitivity, rotInverted);
 // Nokia5100 : for display
 // (pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin)
 #ifdef USE_SCREEN
-#ifdef ARTHUR
-const int blPin = 8;
-#else 
 const int blPin = 7;
-#endif
 AC_Nokia5100_light screen(3, 4, 5, 11, 13, blPin);
 #endif
 
@@ -87,10 +82,11 @@ const int SDhardwareCSPin = 10;
 
 // Measure configuration
 // see nbMeasures in defs.h
-const char measureNames[nbMeasures][7] = { "humid.", "t_SHT1", "t_3232" }; // 6 chars exactly for each
+const char measureNames[nbMeasures][7] = { "humid.", "t_SHT1", "t_3232", "analog" }; // 6 chars exactly for each
 // const char measureNames[nbMeasures][7] = { "h", "t", "t" }; // 6 chars exactly for each
 const int floatPrecision = 3; // nb digits after decimal point
 
+const int delayBetweenRecords = 5; // seconds
 
 //*****************************************************************
 /* Program variables */
@@ -109,15 +105,10 @@ long dateLastScreen = 0;
 void makeMeasures(Record& r) {
   r.date = ds3232.get(); 
   float* v = r.values;
-#ifdef ARTHUR
-  v[0] = 0;
-  v[1] = 1;
-  v[2] = 2;
-#else 
   v[0] = sht1x.readHumidity();
   v[1] = sht1x.readTemperatureC();
   v[2] = ds3232.temperature() / 4.0; // - the ds3232 returns an int equal to 4 times the temperature.
-#endif
+  v[3] = analogRead(rotPin);
 }
 
 //*****************************************************************
@@ -416,6 +407,7 @@ void loop()
 {
   long dateNow = now(); // in seconds
 
+  /*
   // update screen if time to do so
   if (dateNow - dateLastScreen > 1) { // measure and display every 1 second
     dateLastScreen = dateNow;
@@ -423,10 +415,16 @@ void loop()
     makeMeasures(currentMeasure);
     displayMeasures(currentMeasure);
   }
+  */
 
   // make measure if time to do so
-  if (dateNow - dateLastRecord > 3) { // record to SD every 3 seconds
+  if (dateNow - dateLastRecord > delayBetweenRecords) { // record to SD
     dateLastRecord = dateNow;
+
+    makeMeasures(currentMeasure);
+    displayMeasures(currentMeasure);
+    Serial.println(F("Measurement performed"));
+    
     if (serialUsed) {
       printMeasureOnSerial(currentMeasure);
     }

@@ -1,6 +1,6 @@
 
 
-const int nbMeasures = 3; // --currently, at most 5 measures
+const int nbMeasures = 4; // --currently, at most 5 measures
 
 typedef struct {
   time_t date;

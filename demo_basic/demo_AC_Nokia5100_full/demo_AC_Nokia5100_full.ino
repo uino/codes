@@ -1,3 +1,6 @@
+#include <SPI.h>
+
+
 /* 
  * Arthur Chargueraud
  * This code is in the public domain.
@@ -8,8 +11,8 @@
 #include <AC_Nokia5100.h>
 
 // AC_Nokia5100 pins: scePin(3), rstPin(4), dcPin(5), sdinPin(6), sclkPin, blPin
-//AC_Nokia5100 screen(3, 4, 5, 11, 13, 9);
-AC_Nokia5100 screen(3, 4, 5, 6, 7, 0);
+AC_Nokia5100 screen(3, 4, 5, 11, 13, 7);
+//AC_Nokia5100 screen(3, 4, 5, 6, 7, 0);
 
 void lcdFunTime();
 

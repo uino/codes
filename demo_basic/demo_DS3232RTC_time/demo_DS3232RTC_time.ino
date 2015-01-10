@@ -1,3 +1,7 @@
+#include <Wire.h>
+
+#include <Time.h>
+
 /**
  * Demo for the DS3232RTC library.
  * Code by Arthur Chargueraud.
@@ -13,17 +17,17 @@ DS3232RTC ds3232;
 // To register a time in the ds3232, set the boolean below to true
 // and configure the data in the next function
 
-const boolean setInitTime = false;
+const boolean setInitTime = true;
 
 void setInitialTime() {
   tmElements_t initTime;
-  initTime.Second = 9;
-  initTime.Minute = 9;
-  initTime.Hour = 9;
-  initTime.Wday = 1; // day of week, sunday is day 1
-  initTime.Day = 11;
-  initTime.Month = 4;
-  initTime.Year = 44;
+  initTime.Second = 0;
+  initTime.Minute = 0;
+  initTime.Hour = 6;
+  initTime.Wday = 7; // day of week, sunday is day 1
+  initTime.Day = 10;
+  initTime.Month = 1;
+  initTime.Year = 45; // from 1970
   ds3232.write(initTime);
   // alternative: ds3232.set(makeTime(initTime));
 }
@@ -33,9 +37,9 @@ void setInitialTime() {
 void printTime(time_t t) {
   Serial.print(year(t)); 
   Serial.print('/');
-  Serial.print(day(t));
-  Serial.print('/');
   Serial.print(month(t));
+  Serial.print('/');
+  Serial.print(day(t));
   Serial.print(' ');
   Serial.print(hour(t));
   Serial.print(':');

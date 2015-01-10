@@ -1,3 +1,5 @@
+#include <SPI.h>
+
 /* 
  * Arthur Chargueraud
  * This code is in the public domain.

@@ -5,7 +5,7 @@
  *
  *
  * Show in real time the state of a SHT1x sensor on
- * a Nokia5100 display. 
+ * a Nokia5110 display. 
  *
  */
 #include <SPI.h>

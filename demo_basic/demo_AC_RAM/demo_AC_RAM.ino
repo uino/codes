@@ -6,7 +6,7 @@
  * TODO: add comments
  */
 
-#include <AC_Nokia5100.h>
+#include <AC_Nokia5110.h>
 #include <AC_RAM.h>
 #include <avr/pgmspace.h>
 
@@ -15,7 +15,7 @@
 const boolean useScreen = true;
 
 // uncomment below to see the difference
-AC_Nokia5100 screen(3, 4, 5, 11, 13, 7);
+AC_Nokia5110 screen(3, 4, 5, 11, 13, 7);
 
 // uncomment out the line below to see the difference
 // #define F(str) str

@@ -51,6 +51,14 @@ void readRecordsFromLog() {
 /* Menu definition */
 
 
+typedef const char* fstring;
+
+typedef struct {
+  int nbItems;
+  const fstring* items;
+} PanelDescr;
+
+
 const int panelItems0_size = 16;
 const char panelItems0_0[] PROGMEM = "disp. curve";
 const char panelItems0_1[] PROGMEM = "disp. submenu";
@@ -201,3 +209,47 @@ void rotChange() {
 
 
 
+
+//***********************************GENERIC
+
+const int nbMeasures = 4; // --currently, at most 5 measures
+
+typedef struct {
+  time_t date;
+  float values[nbMeasures];
+} Record;
+
+
+
+
+char buffer[20];
+  dtostrf(1245, 2, 0, buffer); 
+  Serial.println(buffer);
+
+
+const int screenNbRows = AC_Nokia5110_light::LCD_ROWS;
+const int screenNbCols = AC_Nokia5110_light::LCD_COLS; 
+
+char buffer[screenNbCols+10]; // used to store characters before printing them
+
+void screenShowFloat(float value, int row, int col, int nbChars, int precision = 0) {
+  dtostrf(value, nbChars, precision, buffer); 
+  screen.setString(buffer, row, col);
+}
+
+void screenShowInt(int value, int row, int col, int nbChars) {
+  dtostrf(value, nbChars, 0, buffer); 
+  screen.setString(buffer, row, col);
+}
+
+
+
+  /*
+  // update screen if time to do so
+  if (dateNow - dateLastScreen > 1) { // measure and display every 1 second
+    dateLastScreen = dateNow;
+    Serial.println(F("Measurement performed"));
+    makeMeasures(currentMeasure);
+    displayMeasures(currentMeasure);
+  }
+  */

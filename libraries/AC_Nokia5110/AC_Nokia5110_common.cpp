@@ -1,15 +1,15 @@
 
 /**
- * AC_Nokia5100 Library -- see "AC_Nokia5100.h" for information.
+ * AC_Nokia5110 Library -- see "AC_Nokia5110.h" for information.
  *
  */ 
 
-#include "AC_Nokia5100_common.h"
+#include "AC_Nokia5110_common.h"
 
-#ifndef AC_Nokia5100_IN_SRAM
-const byte AC_Nokia5100_common::ASCII[] =
+#ifndef AC_Nokia5110_IN_SRAM
+const byte AC_Nokia5110_common::ASCII[] =
 #else
-PROGMEM const prog_byte AC_Nokia5100_common::ASCII[] = 
+PROGMEM const prog_byte AC_Nokia5110_common::ASCII[] = 
 #endif
   {
     // First 32 characters (0x00-0x19) are ignored. These are
@@ -113,7 +113,7 @@ PROGMEM const prog_byte AC_Nokia5100_common::ASCII[] =
     0x78, 0x46, 0x41, 0x46, 0x78 // 0x7f DEL
 };
 
-AC_Nokia5100_common::AC_Nokia5100_common(byte scePin, byte rstPin, byte dcPin,
+AC_Nokia5110_common::AC_Nokia5110_common(byte scePin, byte rstPin, byte dcPin,
                            byte sdinPin, byte sclkPin, byte blPin)
 {
   this->scePin = scePin;
@@ -124,20 +124,20 @@ AC_Nokia5100_common::AC_Nokia5100_common(byte scePin, byte rstPin, byte dcPin,
   this->blPin = blPin;
 }
 
-void AC_Nokia5100_common::gotoXY(int x, int y)
+void AC_Nokia5110_common::gotoXY(int x, int y)
 {
   writeCmd(0, 0x80 | x);  // Column.
   writeCmd(0, 0x40 | y);  // Row.  ?
 }
 
-void AC_Nokia5100_common::setContrast(byte contrast)
+void AC_Nokia5110_common::setContrast(byte contrast)
 {  
   writeCmd(LCD_COMMAND, 0x21); //Tell LCD that extended commands follow
   writeCmd(LCD_COMMAND, 0x80 | contrast); //Set LCD Vop (Contrast): Try 0xB1(good @ 3.3V) or 0xBF if your display is too dark
   writeCmd(LCD_COMMAND, 0x20); //Set display mode
 }
 
-void AC_Nokia5100_common::invertDisplay()
+void AC_Nokia5110_common::invertDisplay()
 {
   /* There are two ways to do this. Either through direct commands
   to the display, or by swapping each bit in the displayMap array.
@@ -161,7 +161,7 @@ void AC_Nokia5100_common::invertDisplay()
 // There are two memory banks in the LCD, data/RAM and commands.
 // This function sets the DC pin high or low depending, and then 
 // sends the data byte
-void AC_Nokia5100_common::writeCmd(byte data_or_command, byte data) 
+void AC_Nokia5110_common::writeCmd(byte data_or_command, byte data) 
 {
   //Tell the LCD that we are writing either to data or a command
   digitalWrite(dcPin, data_or_command); 
@@ -173,7 +173,7 @@ void AC_Nokia5100_common::writeCmd(byte data_or_command, byte data)
 }
 
 //This sends the magical commands to the PCD8544
-void AC_Nokia5100_common::begin() 
+void AC_Nokia5110_common::begin() 
 {
   //Configure control pins
   pinMode(scePin, OUTPUT);
@@ -201,9 +201,9 @@ void AC_Nokia5100_common::begin()
   writeCmd(LCD_COMMAND, 0x0C); //Set display control, normal mode.
 }
 
-byte AC_Nokia5100_common::getASCII(char c, int column) {
+byte AC_Nokia5110_common::getASCII(char c, int column) {
   int k = (c - 0x20) * 5 + column;
-#ifndef AC_Nokia5100_IN_SRAM
+#ifndef AC_Nokia5110_IN_SRAM
   return ASCII[k];
 #else
   return pgm_read_byte_near(& ASCII[k]);

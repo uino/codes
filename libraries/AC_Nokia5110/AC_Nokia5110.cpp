@@ -1,26 +1,26 @@
 
 /**
- * AC_Nokia5100 Library -- see "AC_Nokia5100.h" for information.
+ * AC_Nokia5110 Library -- see "AC_Nokia5110.h" for information.
  *
  */ 
 
-#include "AC_Nokia5100.h"
+#include "AC_Nokia5110.h"
 
-AC_Nokia5100::AC_Nokia5100(byte scePin, byte rstPin, byte dcPin, byte sdinPin, byte sclkPin, byte blPin) 
-  : AC_Nokia5100_common::AC_Nokia5100_common(scePin, rstPin, dcPin, sdinPin, sclkPin, blPin)
+AC_Nokia5110::AC_Nokia5110(byte scePin, byte rstPin, byte dcPin, byte sdinPin, byte sclkPin, byte blPin) 
+  : AC_Nokia5110_common::AC_Nokia5110_common(scePin, rstPin, dcPin, sdinPin, sclkPin, blPin)
 { }
 
-void AC_Nokia5100::setPixel(int x, int y)
+void AC_Nokia5110::setPixel(int x, int y)
 {
   setPixel(x, y, BLACK); 
 }
 
-void AC_Nokia5100::clearPixel(int x, int y)
+void AC_Nokia5110::clearPixel(int x, int y)
 {
   setPixel(x, y, WHITE);
 }
 
-void AC_Nokia5100::setPixel(int x, int y, boolean bw)
+void AC_Nokia5110::setPixel(int x, int y, boolean bw)
 {
   // First, double check that the coordinate is in range.
   if ((x >= 0) && (x < LCD_WIDTH) && (y >= 0) && (y < LCD_HEIGHT))
@@ -36,7 +36,7 @@ void AC_Nokia5100::setPixel(int x, int y, boolean bw)
 
 // This function was grabbed from the SparkFun ColorLCDShield 
 // library.
-void AC_Nokia5100::setLine(int x0, int y0, int x1, int y1, boolean bw)
+void AC_Nokia5110::setLine(int x0, int y0, int x1, int y1, boolean bw)
 {
   int dy = y1 - y0; // Difference between y0 and y1
   int dx = x1 - x0; // Difference between x0 and x1
@@ -96,7 +96,7 @@ void AC_Nokia5100::setLine(int x0, int y0, int x1, int y1, boolean bw)
 
 // This function was grabbed from the SparkFun ColorLCDShield
 // library.
-void AC_Nokia5100::setRect(int x0, int y0, int x1, int y1, boolean fill, boolean bw)
+void AC_Nokia5110::setRect(int x0, int y0, int x1, int y1, boolean fill, boolean bw)
 {
   // check if the rectangle is to be filled
   if (fill == 1)
@@ -132,7 +132,7 @@ void AC_Nokia5100::setRect(int x0, int y0, int x1, int y1, boolean fill, boolean
 
 // This function was grabbed from the SparkFun ColorLCDShield 
 // library.
-void AC_Nokia5100::setCircle (int x0, int y0, int radius, boolean bw, int lineThickness)
+void AC_Nokia5110::setCircle (int x0, int y0, int radius, boolean bw, int lineThickness)
 {
   for(int r = 0; r < lineThickness; r++)
   {
@@ -172,35 +172,35 @@ void AC_Nokia5100::setCircle (int x0, int y0, int radius, boolean bw, int lineTh
   }
 }
 
-void AC_Nokia5100::setChar(char character, int row, int col, boolean bw)
+void AC_Nokia5110::setChar(char character, int row, int col, boolean bw)
 {
   setCharXY(character, col*6, row*8, bw);
 }
 
-void AC_Nokia5100::setChar(char character, int row, int col)
+void AC_Nokia5110::setChar(char character, int row, int col)
 {
   setChar(character, row, col, BLACK);
 }
 
-void AC_Nokia5100::setString(char* dString, int row, int col, boolean bw)
+void AC_Nokia5110::setString(char* dString, int row, int col, boolean bw)
 {
   setStringXY(dString, col*6, row*8, bw);
 }
 
-void AC_Nokia5100::setString(char* dString, int row, int col)
+void AC_Nokia5110::setString(char* dString, int row, int col)
 {
   setString(dString, row, col, BLACK);
 }
 
-void AC_Nokia5100::setString(String str, int row, int col) {
+void AC_Nokia5110::setString(String str, int row, int col) {
   setString(str, row, col, BLACK);
 }
 
-void AC_Nokia5100::setString(String str, int row, int col, boolean bw) {
+void AC_Nokia5110::setString(String str, int row, int col, boolean bw) {
   setStringXY(str, col*6, row*8, bw);
 }
 
-void AC_Nokia5100::setCharXY(char character, int x, int y, boolean bw)
+void AC_Nokia5110::setCharXY(char character, int x, int y, boolean bw)
 {
   for (int i=0; i<5; i++) // 5 columns (x) per character
   {
@@ -217,7 +217,7 @@ void AC_Nokia5100::setCharXY(char character, int x, int y, boolean bw)
 
 // This function was grabbed from the SparkFun ColorLCDShield
 // library.
-void AC_Nokia5100::setStringXY(char* dString, int x, int y, boolean bw)
+void AC_Nokia5110::setStringXY(char* dString, int x, int y, boolean bw)
 {
   while (*dString != 0x00) // loop until null terminator
   {
@@ -237,7 +237,7 @@ void AC_Nokia5100::setStringXY(char* dString, int x, int y, boolean bw)
 }
 
 // adapated from above // TODO: factorize
-void AC_Nokia5100::setStringXY(String str, int x, int y, boolean bw)
+void AC_Nokia5110::setStringXY(String str, int x, int y, boolean bw)
 {
   int nb = str.length();
   for (int k = 0; k < nb; k++) 
@@ -258,18 +258,18 @@ void AC_Nokia5100::setStringXY(String str, int x, int y, boolean bw)
   }
 }
 
-void AC_Nokia5100::setBitmap(char* bitArray)
+void AC_Nokia5110::setBitmap(char* bitArray)
 {
   for (int i=0; i<(LCD_WIDTH * LCD_HEIGHT / 8); i++)
     displayMap[i] = bitArray[i];
 }
 
-void AC_Nokia5100::clearDisplay()
+void AC_Nokia5110::clearDisplay()
 {
   clearDisplay(WHITE);
 }
 
-void AC_Nokia5100::clearDisplay(boolean bw)
+void AC_Nokia5110::clearDisplay(boolean bw)
 {
   for (int i=0; i<(LCD_WIDTH * LCD_HEIGHT / 8); i++)
   {
@@ -280,7 +280,7 @@ void AC_Nokia5100::clearDisplay(boolean bw)
   }
 }
 
-void AC_Nokia5100::updateDisplay()
+void AC_Nokia5110::updateDisplay()
 {
   gotoXY(0, 0);
   for (int i=0; i < (LCD_WIDTH * LCD_HEIGHT / 8); i++)

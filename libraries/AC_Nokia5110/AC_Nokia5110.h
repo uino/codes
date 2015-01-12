@@ -30,20 +30,20 @@
 */
 
 
-#ifndef AC_Nokia5100_h
-#define AC_Nokia5100_h
+#ifndef AC_Nokia5110_h
+#define AC_Nokia5110_h
 
-#include "AC_Nokia5100_common.h"
+#include "AC_Nokia5110_common.h"
 
-// Note: see AC_Nokia5100_IN_SRAM in file AC_Nokia5100_common
+// Note: see AC_Nokia5110_IN_SRAM in file AC_Nokia5110_common
 
-class AC_Nokia5100 : public AC_Nokia5100_common
+class AC_Nokia5110 : public AC_Nokia5110_common
 {
 public:
 
-  AC_Nokia5100(byte scePin, byte rstPin, byte dcPin, byte sdinPin, byte sclkPin, byte blPin);
+  AC_Nokia5110(byte scePin, byte rstPin, byte dcPin, byte sdinPin, byte sclkPin, byte blPin);
 
-  // inherited from AC_Nokia5100_common:
+  // inherited from AC_Nokia5110_common:
   //   void begin();
   //   void setContrast(byte contrast);
   //   void invertDisplay();

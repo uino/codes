@@ -2,7 +2,7 @@
  * Arthur Chargueraud
  * This code is GNU GPL v3.
  *
- * Implementation of a menu displayed on a AC_Nokia5100
+ * Implementation of a menu displayed on a AC_Nokia5110
  * and manipulated using a rotatingPotentiometer (a
  * normal potentiometer with the AC_RotatingPot library) 
  * and a button (with short and long clicks, using the
@@ -12,7 +12,7 @@
  * in order to avoid running out of space.
  */
 
-#include <AC_Nokia5100.h>
+#include <AC_Nokia5110.h>
 #include <AC_RotatingPot.h>
 #include <AC_Button.h>
 #include <avr/pgmspace.h> 
@@ -34,9 +34,9 @@ const int rotSensitivity = 40; // steps out of 1024
 const boolean rotInverted = true; 
 AC_RotatingPot rot(rotPin, rotSensitivity, rotInverted);
 
-// Nokia5100 : for display
+// Nokia5110 : for display
 // (pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin)
-AC_Nokia5100 screen(3, 4, 5, 11, 13, 7);
+AC_Nokia5110 screen(3, 4, 5, 11, 13, 7);
 
 
 //*****************************************************************
@@ -101,12 +101,12 @@ const PanelDescr panelDescrs[nbPanels] = {
 //*****************************************************************
 /* Constants */
 
-const int screenNbRows = AC_Nokia5100::LCD_ROWS;
-const int screenNbCols = AC_Nokia5100::LCD_COLS; // assumed to be 14
+const int screenNbRows = AC_Nokia5110::LCD_ROWS;
+const int screenNbCols = AC_Nokia5110::LCD_COLS; // assumed to be 14
 const int bufferRowLength = 30; // = screenNbCols+1 (but using more characters for safety)
 
-const int WHITE = AC_Nokia5100::WHITE;
-const int BLACK = AC_Nokia5100::BLACK;
+const int WHITE = AC_Nokia5110::WHITE;
+const int BLACK = AC_Nokia5110::BLACK;
 
 
 //*****************************************************************

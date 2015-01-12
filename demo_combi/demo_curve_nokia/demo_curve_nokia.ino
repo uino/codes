@@ -3,16 +3,16 @@
  * Code by Arthur Chargueraud.
  * This code is in the public domain.
  * 
- * Show in real time the state of a button on a Nokia5100 display.
+ * Show in real time the state of a button on a Nokia5110 display.
  *
  */
 
 
 #include <AC_Button.h>
-#include <AC_Nokia5100.h>
+#include <AC_Nokia5110.h>
 
-// AC_Nokia5100 pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin
-AC_Nokia5100 screen(3, 4, 5, 11, 13, 9);
+// AC_Nokia5110 pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin
+AC_Nokia5110 screen(3, 4, 5, 11, 13, 9);
 
 // Potentiometer pin:
 int potentiometerPin = A0;

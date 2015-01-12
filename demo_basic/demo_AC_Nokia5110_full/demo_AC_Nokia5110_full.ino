@@ -5,14 +5,14 @@
  * Arthur Chargueraud
  * This code is in the public domain.
  *
- * Demo associated with library "AC_Nokia5100".
+ * Demo associated with library "AC_Nokia5110".
  */
 
-#include <AC_Nokia5100.h>
+#include <AC_Nokia5110.h>
 
-// AC_Nokia5100 pins: scePin(3), rstPin(4), dcPin(5), sdinPin(6), sclkPin, blPin
-AC_Nokia5100 screen(3, 4, 5, 11, 13, 7);
-//AC_Nokia5100 screen(3, 4, 5, 6, 7, 0);
+// AC_Nokia5110 pins: scePin(3), rstPin(4), dcPin(5), sdinPin(6), sclkPin, blPin
+AC_Nokia5110 screen(3, 4, 5, 11, 13, 7);
+//AC_Nokia5110 screen(3, 4, 5, 6, 7, 0);
 
 void lcdFunTime();
 
@@ -57,10 +57,10 @@ char xkcdSandwich[504] = {
 };
 
 
-const int WHITE = AC_Nokia5100::WHITE;
-const int BLACK = AC_Nokia5100::BLACK;
-const int LCD_WIDTH = AC_Nokia5100::LCD_WIDTH;
-const int LCD_HEIGHT = AC_Nokia5100::LCD_HEIGHT;
+const int WHITE = AC_Nokia5110::WHITE;
+const int BLACK = AC_Nokia5110::BLACK;
+const int LCD_WIDTH = AC_Nokia5110::LCD_WIDTH;
+const int LCD_HEIGHT = AC_Nokia5110::LCD_HEIGHT;
 
 void setup()
 {

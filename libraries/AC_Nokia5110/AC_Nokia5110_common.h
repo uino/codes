@@ -1,5 +1,5 @@
 /**
- * Common definitions for the AC_Nokia5100 and AC_Nokia5100_light library.
+ * Common definitions for the AC_Nokia5110 and AC_Nokia5110_light library.
  * Code by Arthur Chargueraud.
  * Distributed under LGPL (GNU Lesser General Public License version 3).
  *
@@ -9,22 +9,22 @@
  *
  */
 
-#ifndef AC_Nokia5100_common_h
-#define AC_Nokia5100_common_h
+#ifndef AC_Nokia5110_common_h
+#define AC_Nokia5110_common_h
 
 #include <Arduino.h>
 #include <SPI.h>
 
-// Place the following line uncommented in your code, before the include of AC_Nokia5100.h
+// Place the following line uncommented in your code, before the include of AC_Nokia5110.h
 // to allocate the character table in Flash instead of SRAM
-#define AC_Nokia5100_IN_SRAM
+#define AC_Nokia5110_IN_SRAM
 
-#ifdef AC_Nokia5100_IN_SRAM
+#ifdef AC_Nokia5110_IN_SRAM
 #include <avr/pgmspace.h>
 typedef const byte PROGMEM prog_byte;
 #endif
 
-class AC_Nokia5100_common
+class AC_Nokia5110_common
 {
 public:
 
@@ -36,7 +36,7 @@ public:
   static const int WHITE = 0;  // For drawing pixels. A 0 draws white.
   static const int BLACK = 1;  // A 1 draws black.
 
-  AC_Nokia5100_common(byte scePin, byte rstPin, byte dcPin, byte sdinPin, byte sclkPin, byte blPin);
+  AC_Nokia5110_common(byte scePin, byte rstPin, byte dcPin, byte sdinPin, byte sclkPin, byte blPin);
 
   /** 
     * Must be called before using the screen
@@ -91,7 +91,7 @@ protected:
   represents one, 8-pixel, vertical column of a character. 5 bytes
   per character. */
 
-#ifndef AC_Nokia5100_IN_SRAM
+#ifndef AC_Nokia5110_IN_SRAM
   static const byte ASCII[];
 #else
   PROGMEM static const prog_byte ASCII[];

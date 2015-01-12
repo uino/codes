@@ -4,105 +4,46 @@
  * This code is in the public domain.
  */
 
+//*****************************************************************
+#define TEST_SLEEPING 
+// #define TEST_ALARM 
+// #define TEST_GREEN_LED 
+// #define TEST_BUZZER 
+// #define TEST_TORCH
+// #define TEST_PHOTO_RESISTOR
+
+//*****************************************************************
+
 #include <DS3232RTC.h> 
 #include <Time.h>
 #include <Wire.h>
+#include <avr/sleep.h>
 
-const byte LED = 6;
-const byte BIG = 10;
-const byte BUZ = 12;
-const byte LIG = A3;
+//*****************************************************************
 
-void setup()
-{
-  Serial.begin(9600);   
-  Serial.println("Starting up");
+const byte pinGreenLED = 6;
+const byte pinTorch = 10;
+const byte pinBuzzer = 12;
+const byte pinPhotoresistor = A3; 
+const byte pinDS3232vcc = 7;
 
-/*
-  delay(1000);
-
-  pinMode (LED, OUTPUT);
-  digitalWrite(LED, HIGH);
-
-  delay(1000);
-
-  digitalWrite(LED, LOW);
-
-  delay(1000);
-*/
-/* 
-
-  pinMode(9, OUTPUT); 
-  digitalWrite(9, LOW);
-  pinMode(10, OUTPUT); 
-  digitalWrite(10, LOW); */
-  /*
-  pinMode(BIG, OUTPUT); 
-  digitalWrite(BIG, HIGH);
-  delay(1000);
-  digitalWrite(BIG, LOW);
-*/
-/*
-  pinMode(BUZ, OUTPUT); 
-  digitalWrite(BUZ, HIGH);
-  delay(1000);
-  digitalWrite(BUZ, LOW);
-
-  delay(1000);
-*/
-  pinMode(LIG, INPUT); 
-
-}
-
-void loop() 
-{
-  int v = analogRead(LIG);
-  Serial.println(v);
-  delay(300);
-}
-
-
-/*
+const byte interruptPinWakeUp = 0; // actual pin2
 // pin2 is interrupt 0
 // pin3 is interrupt 1
 
-
-#include <avr/sleep.h>
-const byte LED = 6;
-const byte VccDS = 7;
-
-void wake ()
-{
-  // cancel sleep as a precaution
-  sleep_disable();
-  // must do this as the pin will probably stay low for a while
-  detachInterrupt (0); 
-}  // end of wake
-
-  
+//*****************************************************************
 
 DS3232RTC ds3232;
+long dateSinceWakingUp = 0;
 
-tmElements_t initTime;
-
-void initializeTime() {
-  initTime.Second = 9;
-  initTime.Minute = 9;
-  initTime.Hour = 9;
-  initTime.Wday = 1; // day of week, sunday is day 1
-  initTime.Day = 9;
-  initTime.Month = 9;
-  initTime.Year = 9;
-  ds3232.write(initTime);
-  Serial.println("Time initialized");
-}
+//*****************************************************************
 
 void printTime(time_t t) {
   Serial.print(year(t)); 
   Serial.print('/');
-  Serial.print(day(t));
-  Serial.print('/');
   Serial.print(month(t));
+  Serial.print('/');
+  Serial.print(day(t));
   Serial.print(' ');
   Serial.print(hour(t));
   Serial.print(':');
@@ -112,65 +53,167 @@ void printTime(time_t t) {
   Serial.println(); 
 }
 
+//*****************************************************************
+
+void wake() {
+  Serial.println("Wake up");
+
+  // cancel sleep as a precaution
+  sleep_disable();
+  // must do this as the pin will probably stay low for a while
+  detachInterrupt(interruptPinWakeUp); 
+
+  dateSinceWakingUp = ds3232.get();
+
+  /*
+  // DS3232 (alimentation)
+  pinMode(pinDS3232vcc, OUTPUT);
+  digitalWrite(pinDS3232vcc, HIGH);
+  */
+}  // end of wake
+
+
+//*****************************************************************
+
 void setup()
 {
+  // ??
   digitalWrite (2, HIGH);
-  pinMode(VccDS, OUTPUT);      //led de puissance et alim horloge
-    digitalWrite(VccDS, HIGH);
-  
+
+  // Serial
   Serial.begin(9600);   
   Serial.println("Starting up");
+  delay(100);
 
-  // set a given time into the ds3232
-  initializeTime();
-  
-  int example = 2;
-  if (example == 0) { 
-    // alarm every seconds
-    ds3232.setAlarm(ALM1_EVERY_SECOND, 0, 0, 0, 0);  
-  } else if (example == 1) {
-    // alarm once per minute when seconds are equal to 14
-    ds3232.setAlarm(ALM1_MATCH_SECONDS, 14, 0, 0, 0);  
-  } else if (example == 2) {
-    // alarm once per minute when seconds are equal to 14, with interrupt
-    ds3232.alarmInterrupt(ALARM_1, true); 
-    ds3232.setAlarm(ALM1_MATCH_SECONDS, 14, 0, 0, 0);  
-  }
-  // initialize wave output
-  // ds3232.squareWave(SQWAVE_1_HZ);
+  // DS3232 (alimentation)
+  pinMode(pinDS3232vcc, OUTPUT);
+  digitalWrite(pinDS3232vcc, HIGH);
+
+  pinMode (pinGreenLED, OUTPUT);
+#ifdef TEST_GREEN_LED
+  delay(1000);
+  digitalWrite(pinGreenLED, HIGH);
+  delay(1000);
+  digitalWrite(pinGreenLED, LOW);
+  delay(1000);
+#endif
+
+#ifdef TEST_TORCH
+  /* 
+  pinMode(9, OUTPUT); 
+  digitalWrite(9, LOW);
+  pinMode(10, OUTPUT); 
+  digitalWrite(10, LOW); 
+  */
+  pinMode(pinTorch, OUTPUT); 
+  digitalWrite(pinTorch, HIGH);
+  delay(1000);
+  digitalWrite(pinTorch, LOW);
+#endif
+
+#ifdef TEST_BUZZER
+  pinMode(pinBuzzer, OUTPUT); 
+  digitalWrite(pinBuzzer, HIGH);
+  delay(1000);
+  digitalWrite(pinBuzzer, LOW);
+  delay(1000);
+#endif
+
+#ifdef TEST_PHOTO_RESISTOR
+  pinMode(pinPhotoresistor, INPUT); 
+#endif
+
+#if defined(TEST_SLEEPING) || defined(TEST_ALARM)
+  ds3232.alarmInterrupt(ALARM_1, true); 
+  // raise interrupt each time seconds are like now plus 10
+  int base = second(ds3232.get() + 10) % 60;
+  ds3232.setAlarm(ALM1_MATCH_SECONDS, base, 0, 0, 0);  
+  Serial.print("Alarm 1 set for seconds at ");
+  Serial.println(base);
+  dateSinceWakingUp = ds3232.get();
+#endif
 }
 
+//*****************************************************************
 
-
-void loop(void)
+void loop() 
 {
-  
-  pinMode (VccDS, OUTPUT);
- digitalWrite(VccDS, HIGH);
-  
-   pinMode (LED, OUTPUT);
- digitalWrite(LED, HIGH);
+  Serial.println("Loop");
+  delay(100);
 
-  
+#if defined(TEST_SLEEPING) || defined(TEST_DATE) || defined(TEST_ALARM)
   Serial.print("Date: ");
   printTime(ds3232.get());
+  delay(1000);
+#endif
+
+#if defined(TEST_ALARM)
+  if (ds3232.alarm(ALARM_1)) {
+    Serial.println("Alarm 1 triggered");
+  }
+#endif
+
+#ifdef TEST_SLEEPING
+  if (ds3232.get() - dateSinceWakingUp > 3) { // 3seconds
+
+    /*digitalWrite(pinGreenLED, HIGH);
+    delay(500);
+    digitalWrite(pinGreenLED, LOW);*/
+
+    /*
+    digitalWrite(pinDS3232vcc, LOW);
+    pinMode (pinDS3232vcc, INPUT);
+    */
+
+    Serial.println("Going to sleep");
+    delay(100);
+    
+    ADCSRA = 0; // disable ADC
+
+    set_sleep_mode(SLEEP_MODE_PWR_DOWN);  
+    /// set_sleep_mode(SLEEP_MODE_IDLE);
+    sleep_enable();
+
+    // Do not interrupt before we go to sleep, or the
+    // ISR will detach interrupts and we won't wake.
+    noInterrupts();
+    // will be called when pin D2 goes low  
+    attachInterrupt(interruptPinWakeUp, wake, LOW);
+
+    // turn off brown-out enable in software
+    // BODS must be set to one and BODSE must be set to zero within four clock cycles
+    MCUCR = bit (BODS) | bit (BODSE);
+    // The BODS bit is automatically cleared after three clock cycles
+    MCUCR = bit (BODS); // must be at most 3 clock cycles away from sleep_cpu
+    
+    // We are guaranteed that the sleep_cpu call will be done
+    // as the processor executes the next instruction after
+    // interrupts are turned on.
+    interrupts();  // one cycle
+    sleep_cpu();   // one cycle
+ }
+#endif
+
+
+#ifdef TEST_PHOTO_RESISTOR
+  int v = analogRead(pinPhotoresistor);
+  Serial.println(v);
+  delay(300);
+#endif
+
+  delay(100);
+}
+
+//*****************************************************************
+
+/*
 
   if (ds3232.alarm(ALARM_1)) {
     Serial.println("Alarm 1 triggered");
   }
  
-  delay(300);
-  Serial.print("Date: ");
-  printTime(ds3232.get());
-
-     
- delay(300);
-
- digitalWrite(LED, LOW);
-  pinMode (LED, INPUT);
-
- digitalWrite(VccDS, LOW);
-  pinMode (VccDS, INPUT);
+  digitalWrite(pinDS3232vcc, LOW);
+  pinMode (pinDS3232vcc, INPUT);
   
   // disable ADC
   ADCSRA = 0;  

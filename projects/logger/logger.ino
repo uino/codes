@@ -20,7 +20,9 @@
  *
  */
 
-// #define ARTHUR 1
+#define SLEEPING // à commenter pour désactiver le sleep
+
+// #define ARTHUR 1 // à commenter pour utilisation sur le vrai logger
 
 //*****************************************************************
 /* Includes */
@@ -37,6 +39,7 @@
 #include <AC_RotatingPot.h>
 #include <AC_Nokia5110_light.h>
 #include <AC_Button.h>
+#include <avr/sleep.h>
 #include "defs.h"
 
 
@@ -89,9 +92,10 @@ AC_Nokia5110_light screen(3, 4, 5, 11, 13,
 // (pins: dataPin, clockPin)
 SHT1x sht1x(9, 10);
 
-// ds3232 : for measuring clock and temperature
+// ds3232 : for alarm, clock and temperature
 DS3232RTC ds3232;
 const int pinDS3232vcc = 7;
+const byte interruptPinWakeUp = 0; // actual pin2
 
 // SD card : for writing log file
 const int SDselectPin = 8;
@@ -332,6 +336,69 @@ void rotChange() {
 
 
 //*****************************************************************
+/* Performing measures */
+
+void performMeasures(boolean showResultsOnScreen) {
+  if (serialUsed) {
+    Serial.println(F("Starting measurements"));
+  }
+  makeMeasures(currentMeasure);
+  if (showResultsOnScreen) {
+    writeMeasuresToScreen(currentMeasure);
+  }
+  boolean saveSuccessful = writeMeasuresToLog(currentMeasure); 
+  if (serialUsed) {
+    writeMeasuresToSerial(currentMeasure);
+    if (saveSuccessful) {
+      Serial.println(F("Measurements saved to SD"));
+    }
+  }
+}
+
+
+//*****************************************************************
+/* Sleep function and wake up interrupt handler */
+
+void wakeUp() {
+  // stop sleeping
+  sleep_disable();
+  detachInterrupt(interruptPinWakeUp); 
+  // TODO: est-ce qu'il faut faire ça ?
+  pinMode(pinDS3232vcc, OUTPUT);
+  digitalWrite(pinDS3232vcc, HIGH);
+  // Body of the handler
+  if (serialUsed) {
+    Serial.println("Wake up");
+    delay(100);
+  }
+  performMeasures(false);
+  if (serialUsed) {
+    delay(100);
+  }
+} // end of wake
+
+void goToSleep() {
+  if (serialUsed) {
+    Serial.println("Going to sleep");
+    delay(100);
+  }
+  // TODO: est-ce qu'il faut faire ça ?
+  digitalWrite(pinDS3232vcc, LOW);
+  pinMode (pinDS3232vcc, INPUT);
+  // see http://www.gammon.com.au/forum/?id=11497 sketch J
+  ADCSRA = 0;
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN);  
+  sleep_enable();
+  noInterrupts();
+  attachInterrupt(interruptPinWakeUp, wakeUp, LOW);
+  MCUCR = bit(BODS) | bit(BODSE);
+  MCUCR = bit(BODS);
+  interrupts();
+  sleep_cpu();
+}
+
+
+//*****************************************************************
 /* Setup */
 
 void setup()
@@ -386,6 +453,18 @@ void setup()
     Serial.println(AC_RAM::getFree());
     Serial.println(F("Ready"));
   }
+
+  // Sleeping
+#ifdef SLEEPING
+  ds3232.alarmInterrupt(ALARM_1, true); 
+  // raise interrupt each time seconds are like now plus 10
+  int alarmSeconds = second(ds3232.get() + 10) % 60;
+  ds3232.setAlarm(ALM1_MATCH_SECONDS, alarmSeconds, 0, 0, 0);  
+  if (serialUsed) {
+    Serial.print("Wake up alarm set for seconds at ");
+    Serial.println(alarmSeconds);
+  }
+#endif
 }
 
 
@@ -394,25 +473,17 @@ void setup()
 
 void loop()
 {
-  long dateNow = now(); // in seconds
+#ifdef SLEEPING
+  goToSleep();
+  return;
+#endif
 
   // make measure if time to do so
+  long dateNow = now(); // in seconds
   if (dateNow - dateLastRecord > delayBetweenRecords) {
     dateLastRecord = dateNow;
-    if (serialUsed) {
-      Serial.println(F("Starting measurements"));
-    }
-    makeMeasures(currentMeasure);
-    writeMeasuresToScreen(currentMeasure);
-    boolean saveSuccessful = writeMeasuresToLog(currentMeasure); 
-    if (serialUsed) {
-      writeMeasuresToSerial(currentMeasure);
-      if (saveSuccessful) {
-        Serial.println(F("Measurements saved to SD"));
-     }
-    }
+    performMeasures(true);
   }
-
   // Serial.println(F("wait"));
   button.poll();
   rot.poll();

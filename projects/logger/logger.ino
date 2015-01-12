@@ -8,6 +8,10 @@
  * log the values on a SD card, and displays the
  * measures on a Nokia5110 screen. 
  *
+ * To add a measure, modify "defs.h" and then modify
+ * the functions: writeMeasuresToScreen, writeMeasuresToSerial, 
+ * and writeMeasuresToLog.
+ *
  *
  * // Not yet implemented:
  *   An DS3232 alarm is used to wake up the Arduino board
@@ -16,7 +20,10 @@
  *
  */
 
-// #define ARTHUR
+// #define ARTHUR 1
+
+//*****************************************************************
+/* Includes */
 
 #include <Arduino.h>
 #include <SPI.h>
@@ -24,9 +31,9 @@
 #include <AC_RAM.h>
 #include <SD.h>
 #include <SHT1x.h>
-#include <DS3232RTC.h> 
 #include <Time.h>
 #include <Wire.h>  
+#include <DS3232RTC.h> 
 #include <AC_RotatingPot.h>
 #include <AC_Nokia5110_light.h>
 #include <AC_Button.h>
@@ -84,6 +91,7 @@ SHT1x sht1x(9, 10);
 
 // ds3232 : for measuring clock and temperature
 DS3232RTC ds3232;
+const int pinDS3232vcc = 7;
 
 // SD card : for writing log file
 const int SDselectPin = 8;
@@ -105,18 +113,15 @@ long dateLastScreen = 0;
 /* Performing measures */
 
 void makeMeasures(Record& r) {
-#ifdef ARTHUR
-  r.date = 161813518 + (millis()/1000);
-  r.humidity = 0;
-  r.tempSHT1x = 0;
-  r.tempDS3232 = 1; // - the ds3232 returns an int equal to 4 times the temperature.
-  r.potar = analogRead(rotPin);
-  return;
-#endif
   r.date = ds3232.get();
+  #ifdef ARTHUR
+  r.humidity = 1;
+  r.tempSHT1x = 2;
+  #else
   r.humidity = sht1x.readHumidity();
   r.tempSHT1x = sht1x.readTemperatureC();
-  r.tempDS3232 = ds3232.temperature() / 4.0; // - the ds3232 returns an int equal to 4 times the temperature.
+  #endif
+  r.tempDS3232 = ds3232.temperature() / 4.0; // - the ds3232 returns an int equal to 4   times the temperature.
   r.potar = analogRead(rotPin);
 }
 
@@ -124,7 +129,7 @@ void makeMeasures(Record& r) {
 //*****************************************************************
 /* Serial reporting */
 
-void printTimeOnSerial(time_t t) {
+void writeTimeToSerial(time_t t) {
   Serial.print(year(t)); 
   Serial.print('/');
   Serial.print(month(t));
@@ -139,9 +144,9 @@ void printTimeOnSerial(time_t t) {
   Serial.println();
 }
 
-void printMeasureOnSerial(Record& r) {
+void writeMeasuresToSerial(Record& r) {
   Serial.println("---------------------------");
-  printTimeOnSerial(r.date);
+  writeTimeToSerial(r.date);
   Serial.print(names[0]);
   Serial.print(": ");
   Serial.println(r.humidity, 3);
@@ -161,25 +166,38 @@ void printMeasureOnSerial(Record& r) {
 //*****************************************************************
 /* LCD reporting */
 
-void displayMeasures(Record r) {
+void writeTimeToScreen(int line, time_t t) {
+  // no space to display year; so we display "month/day"
+  // screen.setInt((year(t) % 100), line, 0, 2);
+  int col = 0;
+  screen.setInt(month(t), line, col, 2, true); // true for leadingZero
+  col += 2;
+  screen.setString("/", line, col);
+  col += 1;
+  screen.setInt(day(t), line, col, 2, true);
+  col += 2;
+  screen.setString(" ", line, col);
+  col += 1;
+  screen.setInt(hour(t), line, col, 2, true);
+  col += 2;
+  screen.setString(":", line, col);
+  col += 1;
+  screen.setInt(minute(t), line, col, 2, true);
+  col += 2;
+  screen.setString(":", line, col);
+  col += 1;
+  screen.setInt(second(t), line, col, 2, true);
+}
+
+
+void writeMeasuresToScreen(Record r) {
   const int separatorCol = 7;
   const int valueCol = 9;
   const int valueNbChars = 5;
   int line = 0;
   screen.clearDisplay(); 
   // date
-  time_t t = r.date;
-  // no space to display year; so we display "month/day"
-  // screen.setInt((year(t) % 100), line, 0, 2);
-  screen.setInt(month(t), line, 0, 2, true); // true for leadingZero
-  screen.setString("/", line, 2);
-  screen.setInt(day(t), line, 3, 2, true);
-  screen.setString(" ", line, 5);
-  screen.setInt(hour(t), line, 6, 2, true);
-  screen.setString(":", line, 8);
-  screen.setInt(minute(t), line, 9, 2, true);
-  screen.setString(":", line, 11);
-  screen.setInt(second(t), line, 12, 2, true);
+  writeTimeToScreen(line, r.date);
   line++;
   // data1
   screen.setString(names[0], line, 0);
@@ -237,7 +255,7 @@ void resetLog() {
   writeLogHeader();
 }
 
-void writeTime(File file, time_t t) {
+void writeTimeToLog(File file, time_t t) {
   file.print(year(t)); 
   file.print('/');  
   file.print(month(t));
@@ -252,12 +270,12 @@ void writeTime(File file, time_t t) {
 }
 
 // return whether the operation was successful
-boolean writeRecordToLog(Record& r) {
+boolean writeMeasuresToLog(Record& r) {
   File file = openLog();
   if (! file)
     return false;
   // begin writing
-  writeTime(file, r.date); // human-readable time
+  writeTimeToLog(file, r.date); // human-readable time
   file.print("\t");
   file.print(r.date); // unix time
   file.print("\t");
@@ -272,6 +290,28 @@ boolean writeRecordToLog(Record& r) {
   // end writing
   file.close();
   return true;
+}
+
+
+//*****************************************************************
+/* Debugging */
+
+// Auxiliary function to check that the card appears to be working
+void SDcheckWorking() {
+  File myFile = SD.open("example.txt", FILE_WRITE);
+  if (myFile) {
+    screen.setString("SD ok", 0, 0);
+    if (serialUsed) {
+      Serial.println(F("SD ok"));
+    }
+  } else {
+    screen.setString("SD bug", 0, 0);
+    if (serialUsed) {
+      Serial.println(F("SD bug"));
+    }
+  }
+  screen.updateDisplay(); 
+  myFile.close();
 }
 
 
@@ -302,13 +342,16 @@ void setup()
     Serial.println(F("Starting"));
   }
 
+  // DS3232 (alimentation)
+  pinMode(pinDS3232vcc, OUTPUT);
+  digitalWrite(pinDS3232vcc, HIGH);
+
   // LCD screen
   screen.begin();
   screen.setContrast(60);
   screen.clearDisplay(); 
   screen.setString("Load", 0, 0);
   screen.updateDisplay(); 
-    // delay(500);
 
   // SD
   pinMode(SDhardwareCSPin, OUTPUT); 
@@ -317,20 +360,7 @@ void setup()
       Serial.println(F("Card failed or missing"));
     }
   } else {
-    // check that the card appears to be working
-    {
-      File myFile = SD.open("example.txt", FILE_WRITE);
-      if (myFile) {
-        Serial.println(F("SD ok"));
-        screen.setString("SD ok", 0, 0);
-      } else {
-        Serial.println(F("SD bug"));
-        screen.setString("SD bug", 0, 0);
-      }
-      screen.updateDisplay(); 
-      myFile.close();
-    }
-
+    SDcheckWorking();
     if (resetLogOnSetup) {
       Serial.println(F("Card reset"));
       screen.setString("SD log reset", 0, 0);
@@ -364,25 +394,21 @@ void setup()
 
 void loop()
 {
-  #ifdef ARTHUR
-  long dateNow = millis() / 1000;
-  #else
   long dateNow = now(); // in seconds
-  #endif
 
   // make measure if time to do so
   if (dateNow - dateLastRecord > delayBetweenRecords) {
     dateLastRecord = dateNow;
     if (serialUsed) {
-      Serial.println(F("Starting measurement"));
+      Serial.println(F("Starting measurements"));
     }
     makeMeasures(currentMeasure);
-    displayMeasures(currentMeasure);
-    boolean saveSuccessful = writeRecordToLog(currentMeasure); 
+    writeMeasuresToScreen(currentMeasure);
+    boolean saveSuccessful = writeMeasuresToLog(currentMeasure); 
     if (serialUsed) {
-      printMeasureOnSerial(currentMeasure);
+      writeMeasuresToSerial(currentMeasure);
       if (saveSuccessful) {
-        Serial.println(F("Measurement saved to SD"));
+        Serial.println(F("Measurements saved to SD"));
      }
     }
   }

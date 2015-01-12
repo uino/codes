@@ -253,3 +253,21 @@ void screenShowInt(int value, int row, int col, int nbChars) {
     displayMeasures(currentMeasure);
   }
   */
+
+
+
+  #ifdef ARTHUR
+  long dateNow = millis() / 1000;
+  #else
+  long dateNow = now(); // in seconds
+  #endif
+/*
+#ifdef ARTHUR
+  r.humidity = 0;
+  r.tempSHT1x = 0;
+  r.tempDS3232 = 1; // - the ds3232 returns an int equal to 4 times the temperature.
+  r.potar = analogRead(rotPin);
+  return;
+#endif
+*/
+

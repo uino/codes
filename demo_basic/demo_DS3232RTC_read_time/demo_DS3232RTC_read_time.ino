@@ -11,9 +11,9 @@ DS3232RTC ds3232;
 void printTime(time_t t) {
   Serial.print(year(t)); 
   Serial.print('/');
-  Serial.print(day(t));
-  Serial.print('/');
   Serial.print(month(t));
+  Serial.print('/');
+  Serial.print(day(t));
   Serial.print(' ');
   Serial.print(hour(t));
   Serial.print(':');

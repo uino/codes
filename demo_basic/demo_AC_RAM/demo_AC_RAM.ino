@@ -1,9 +1,10 @@
 /**
+ *
  * Demo for the AC_RAM library.
  * Code by Arthur Chargueraud.
  * This code is in the public domain.
  *
- * TODO: add comments
+ * TODO: add update and add comments
  */
 
 #include <AC_Nokia5110.h>

@@ -33,6 +33,7 @@
 #include <SHT1x.h>
 #include <Time.h>
 #include <Wire.h>  
+#include <DS3232RTC.h> 
 #include <AC_DS3232.h> 
 #include <AC_RotatingPot.h>
 #include <AC_Nokia5110_light.h>

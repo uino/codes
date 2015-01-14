@@ -1,0 +1,7 @@
+const int delayAlarm2 = 60; // seconds, but only minutes are taken into account
+  ds3232.setRelativeAlarm1(delayAlarm2);
+
+  if (ds3232.alarm2()) {
+    Serial.println("Alarm 2");
+    ds3232.setRelativeAlarm2(delayAlarm2);
+  }

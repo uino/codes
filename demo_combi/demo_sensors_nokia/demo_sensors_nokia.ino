@@ -94,8 +94,8 @@ void printMeasureOnSerial(Record& r) {
 
 // TODO: move some of this to a library
 
-const int screenNbRows = AC_Nokia5110::LCD_ROWS;
-const int screenNbCols = AC_Nokia5110::LCD_COLS; 
+const int screenNbRows = screen.LCD_ROWS;
+const int screenNbCols = screen.LCD_COLS; 
 const int bufferRowLength = 30; // = screenNbCols+1 (but using more characters for safety)
 
 // prints a two-digit nonnegative int into a given target string (of length >= 2)

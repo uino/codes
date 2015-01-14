@@ -1,5 +1,5 @@
 /**
- * Demo for the ACclock library.
+ * Demo for the AC_DS1307 library.
  * Code by Arthur Chargueraud.
  * This code is in the public domain.
  */

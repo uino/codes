@@ -22,7 +22,7 @@
 
 #define SLEEPING // à commenter pour désactiver le sleep
 
-// #define ARTHUR 1 // à commenter pour utilisation sur le vrai logger
+#define ARTHUR 1 // à commenter pour utilisation sur le vrai logger
 
 //*****************************************************************
 /* Includes */

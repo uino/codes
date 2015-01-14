@@ -11,7 +11,7 @@
 // (pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin)
 AC_Nokia5110 screen(3, 4, 5, 11, 13, 7);
 
-const int nbRows = AC_Nokia5110::LCD_ROWS;
+const int nbRows = screen.LCD_ROWS;
 
 void setup()
 {

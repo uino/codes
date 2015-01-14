@@ -32,12 +32,12 @@ const int pinY = A1;
 const int pinZ = A2;
 
 // calibration.
-const int minX = 260;
-const int maxX = 396;
-const int minY = 260;
-const int maxY = 396;
-const int minZ = 280;
-const int maxZ = 415;
+const int minX = 270;
+const int maxX = 408;
+const int minY = 261;
+const int maxY = 402;
+const int minZ = 261;
+const int maxZ = 397;
 
 // float version of the Arduino "map" function
 float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
@@ -80,6 +80,6 @@ void loop(){
   Serial.print(RAD_TO_DEG * a, 1);
   Serial.println("");
 
-  delay(200);
+  delay(50);
 }
 

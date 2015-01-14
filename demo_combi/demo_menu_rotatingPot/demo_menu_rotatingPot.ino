@@ -101,12 +101,9 @@ const PanelDescr panelDescrs[nbPanels] = {
 //*****************************************************************
 /* Constants */
 
-const int screenNbRows = AC_Nokia5110::LCD_ROWS;
-const int screenNbCols = AC_Nokia5110::LCD_COLS; // assumed to be 14
+const int screenNbRows = screen.LCD_ROWS;
+const int screenNbCols = screen.LCD_COLS; // assumed to be 14
 const int bufferRowLength = 30; // = screenNbCols+1 (but using more characters for safety)
-
-const int WHITE = AC_Nokia5110::WHITE;
-const int BLACK = AC_Nokia5110::BLACK;
 
 
 //*****************************************************************
@@ -125,7 +122,7 @@ void completeLineWithSpaces(char* buffer) {
 
 void displayChoices(const fstring* choices, int firstChoice, int nbChoices, int selected) {
   char buffer[bufferRowLength];
-  screen.clearDisplay(WHITE);
+  screen.clearDisplay();
   for (int line = 0; line < nbChoices; line++) {
     int item = firstChoice + line;
     boolean whiteBackground = (item != selected);
@@ -197,7 +194,7 @@ void setup()
   // LCD screen
   screen.begin();
   screen.setContrast(60);
-  screen.clearDisplay(WHITE);
+  screen.clearDisplay();
   screen.setString("Loading...", 0, 0);
   screen.updateDisplay(); 
 

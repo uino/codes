@@ -28,6 +28,14 @@ public:
 
 // TODO: comment and move to cpp file
 
+  void setAlarm1(time_t unixTime) {
+    setAbsoluteAlarm(ALM1_MATCH_DATE, unixTime);
+  }
+
+  void setAlarm2(time_t unixTime) {
+    setAbsoluteAlarm(ALM2_MATCH_DATE, unixTime);
+  }
+
   void setRelativeAlarm1(long nbSecondsFromNow) {
     setRelativeAlarm(ALM1_MATCH_DATE, nbSecondsFromNow);
   }
@@ -60,13 +68,17 @@ private:
     return nbSeconds + 60 * (nbMinutes + 60 * (nbHours + 24 * nbDays));
   }
 
-  void setRelativeAlarm(ALARM_TYPES_t alarmType, long nbSecondsFromNow) {
-    time_t t = get() + nbSecondsFromNow;
-    int sec = second(t);
+  void setAbsoluteAlarm(ALARM_TYPES_t alarmType, time_t unixTime) {
+    time_t t = unixTime;
+    byte sec = second(t);
     if (alarmType == ALARM_2) {
       sec = 0;
     }
     setAlarm(alarmType, sec, minute(t), hour(t), day(t));
+  }
+
+  void setRelativeAlarm(ALARM_TYPES_t alarmType, long nbSecondsFromNow) {
+    setAbsoluteAlarm(alarmType, get() + nbSecondsFromNow);
   }
 
 

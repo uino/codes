@@ -16,12 +16,17 @@
 #include <AC_DS3232.h> 
 
 
-const byte pinLED = 13;
-
 const byte idInterrupt = 0; // corresponds to pinInterrupt
 const byte pinInterrupt = 2; 
 
 const int periodWakeUp = 5; // seconds
+
+int counter = 0;
+int totalCounter = 0;
+boolean isSleeping = false;
+long dateLastAlarm = 0;
+
+
 
 AC_DS3232 ds3232;
 
@@ -44,56 +49,50 @@ void printTime(time_t t) {
 void wake() {
   AC_Sleep::terminateSleep();
   detachInterrupt(idInterrupt);
-  Serial.println("Exit sleep");
 }
 
 void setup() {
-  digitalWrite(pinInterrupt, HIGH); // enable pull up
-
   pinMode(7, OUTPUT); digitalWrite(7, HIGH);  // TEMP: power the ds3232
-
-  pinMode(pinLED, OUTPUT);
   
   Serial.begin(9600);   
   Serial.println("Starting up");
 
-  // periodic alarm
-  ds3232.setRelativeAlarm1(periodWakeUp);
-  ds3232.alarmInterrupt(ALARM_1, true); 
+  // init date
+  dateLastAlarm = ds3232.get();
 
-  /* alternative code:
-  // alarm once per minute when seconds are equal to 5 more than now
-  int sec = ds3232.get() % 60 + 5;
+  // periodic wake up signal
+  digitalWrite(pinInterrupt, HIGH); // enable pull up
   ds3232.alarmInterrupt(ALARM_1, true); 
-  ds3232.setAlarm(ALM1_MATCH_SECONDS, sec, 0, 0, 0); 
-  */
 }
-
-int counter = 0;
-int totalCounter = 0;
 
 void loop(void)
 {
+  if (isSleeping) {
+    isSleeping = false;
+    Serial.println("Exit sleep");
+  }
+
   counter++;
   totalCounter++;
   Serial.print("Total counter: ");
   Serial.println(totalCounter);
   printTime(ds3232.get());
-
-  // blink pin
-  digitalWrite(pinLED, HIGH);
-  delay(100);
-  digitalWrite(pinLED, LOW);
-  delay(100);
+  delay(300);
 
   // goes to sleep after 5 iterations
   if (counter == 5) {
-    Serial.print("Enter sleep");
-    delay(100);
     counter = 0;
+    Serial.println("Enter sleep");
+    delay(100);
 
-    ds3232.alarm(ALARM_1); // reset alarm
-    ds3232.setRelativeAlarm1(periodWakeUp);
+    ds3232.alarm1(); // reset alarm
+    dateLastAlarm += periodWakeUp;
+    time_t timeNow = ds3232.get();
+    if (dateLastAlarm <= timeNow) { // if target in the past, catch up
+      dateLastAlarm = timeNow + periodWakeUp;
+    }
+    ds3232.setAlarm1(dateLastAlarm);
+    isSleeping = true;
     AC_Sleep::enterSleepOnInterrupt(idInterrupt, wake, LOW);
   }
 

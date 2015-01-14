@@ -9,4 +9,4 @@ typedef struct {
 
 // ====> IMPORTANT Names should have exactly 6 characters each! <======
 const int nbMeasures = 4;
-char names[nbMeasures][20] = { "humid.", "t_SHT1", "t_3232", "analog:" };
+char names[nbMeasures][20] = { "humid.", "t_SHT1", "t_3232", "analog" };

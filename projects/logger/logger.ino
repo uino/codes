@@ -20,8 +20,6 @@
  *
  */
 
-#define SLEEPING // à commenter pour désactiver le sleep
-
 #define ARTHUR 1 // à commenter pour utilisation sur le vrai logger
 
 //*****************************************************************
@@ -35,9 +33,10 @@
 #include <SHT1x.h>
 #include <Time.h>
 #include <Wire.h>  
-#include <DS3232RTC.h> 
+#include <AC_DS3232.h> 
 #include <AC_RotatingPot.h>
 #include <AC_Nokia5110_light.h>
+#include <AC_Sleep.h>
 #include <AC_Button.h>
 #include <avr/sleep.h>
 #include "defs.h"
@@ -55,10 +54,21 @@ const boolean resetLogOnSetup = false; // use "true" only for debugging
 char* filename = "logger.txt"; // name of log file (8+3 characters max)
 
 // Delay between two measurements
-const long delayBetweenRecords = 2; // seconds
+const long delayBetweenRecordsOnScreen = 2; // seconds
+
+// Period at which to wake up the board
+const int delayBetweenRecordsOnSD = 6; // seconds
 
 // Whether to use Serial
-const boolean serialUsed = true; // use "true" only for debugging
+const boolean useSerial = true; // use "true" only for debugging
+
+
+
+// Whether to go to sleep after measure
+boolean useSleep = true; 
+
+// Whether to show measures on screen
+boolean useScreen = false;
 
 
 //*****************************************************************
@@ -93,9 +103,13 @@ AC_Nokia5110_light screen(3, 4, 5, 11, 13,
 SHT1x sht1x(9, 10);
 
 // ds3232 : for alarm, clock and temperature
-DS3232RTC ds3232;
+AC_DS3232 ds3232;
 const int pinDS3232vcc = 7;
 const byte interruptPinWakeUp = 0; // actual pin2
+
+// Interrupt pins
+const byte idInterrupt = 0; 
+const byte pinInterrupt = 2; 
 
 // SD card : for writing log file
 const int SDselectPin = 8;
@@ -109,8 +123,10 @@ const int SDhardwareCSPin = 10;
 Record currentMeasure;
 
 // Control of actions
-long dateLastRecord = 0;
-long dateLastScreen = 0;
+boolean isSleeping = false;
+time_t dateNextRecordOnScreen = 0;
+time_t dateLastRecordOnSD = 0;
+time_t dateNextRecordOnSD = 0;
 
 
 //*****************************************************************
@@ -232,8 +248,8 @@ void writeMeasuresToScreen(Record r) {
 
 File openLog() {
   File file = SD.open(filename, FILE_WRITE);
-  if (!file && serialUsed) {
-    Serial.println(F("Error opening file"));
+  if (!file && useSerial) {
+    Serial.println(F("=== Error opening file"));
   }
   return file;
 }
@@ -305,12 +321,12 @@ void SDcheckWorking() {
   File myFile = SD.open("example.txt", FILE_WRITE);
   if (myFile) {
     screen.setString("SD ok", 0, 0);
-    if (serialUsed) {
+    if (useSerial) {
       Serial.println(F("SD ok"));
     }
   } else {
     screen.setString("SD bug", 0, 0);
-    if (serialUsed) {
+    if (useSerial) {
       Serial.println(F("SD bug"));
     }
   }
@@ -338,19 +354,23 @@ void rotChange() {
 //*****************************************************************
 /* Performing measures */
 
-void performMeasures(boolean showResultsOnScreen) {
-  if (serialUsed) {
+void performMeasures(boolean saveToSD) {
+  if (useSerial) {
     Serial.println(F("Starting measurements"));
   }
   makeMeasures(currentMeasure);
-  if (showResultsOnScreen) {
+  if (useScreen) {
     writeMeasuresToScreen(currentMeasure);
   }
-  boolean saveSuccessful = writeMeasuresToLog(currentMeasure); 
-  if (serialUsed) {
+  if (useSerial) {
     writeMeasuresToSerial(currentMeasure);
-    if (saveSuccessful) {
-      Serial.println(F("Measurements saved to SD"));
+  }
+  if (saveToSD) {
+    boolean saveSuccessful = writeMeasuresToLog(currentMeasure); 
+    if (useSerial) {
+      if (saveSuccessful) {
+        Serial.println(F("Measurements saved to SD"));
+      }
     }
   }
 }
@@ -359,44 +379,20 @@ void performMeasures(boolean showResultsOnScreen) {
 //*****************************************************************
 /* Sleep function and wake up interrupt handler */
 
-void wakeUp() {
-  // stop sleeping
-  sleep_disable();
-  detachInterrupt(interruptPinWakeUp); 
+
+void wake() {
+  AC_Sleep::terminateSleep();
+  detachInterrupt(idInterrupt);
+}
+
+/*
   // TODO: est-ce qu'il faut faire ça ?
   pinMode(pinDS3232vcc, OUTPUT);
   digitalWrite(pinDS3232vcc, HIGH);
-  // Body of the handler
-  if (serialUsed) {
-    Serial.println("Wake up");
-    delay(100);
-  }
-  performMeasures(false);
-  if (serialUsed) {
-    delay(100);
-  }
-} // end of wake
-
-void goToSleep() {
-  if (serialUsed) {
-    Serial.println("Going to sleep");
-    delay(100);
-  }
   // TODO: est-ce qu'il faut faire ça ?
   digitalWrite(pinDS3232vcc, LOW);
   pinMode (pinDS3232vcc, INPUT);
-  // see http://www.gammon.com.au/forum/?id=11497 sketch J
-  ADCSRA = 0;
-  set_sleep_mode(SLEEP_MODE_PWR_DOWN);  
-  sleep_enable();
-  noInterrupts();
-  attachInterrupt(interruptPinWakeUp, wakeUp, LOW);
-  MCUCR = bit(BODS) | bit(BODSE);
-  MCUCR = bit(BODS);
-  interrupts();
-  sleep_cpu();
-}
-
+*/
 
 //*****************************************************************
 /* Setup */
@@ -404,12 +400,12 @@ void goToSleep() {
 void setup()
 {
   // Serial port
-  if (serialUsed) {
+  if (useSerial) {
     Serial.begin(serialBaudRate); 
     Serial.println(F("Starting"));
   }
 
-  // DS3232 (alimentation)
+  // DS3232 power
   pinMode(pinDS3232vcc, OUTPUT);
   digitalWrite(pinDS3232vcc, HIGH);
 
@@ -423,7 +419,7 @@ void setup()
   // SD
   pinMode(SDhardwareCSPin, OUTPUT); 
   if (! SD.begin(SDselectPin)) {
-    if (serialUsed) {
+    if (useSerial) {
       Serial.println(F("Card failed or missing"));
     }
   } else {
@@ -448,24 +444,21 @@ void setup()
   button.onUpLong(longClick);
 
   // Ready for action
-  if (serialUsed) {
+  if (useSerial) {
     Serial.print(F("SRAM free: "));
     Serial.println(AC_RAM::getFree());
     Serial.println(F("Ready"));
   }
 
   // Sleeping
-#ifdef SLEEPING
-  ds3232.alarmInterrupt(ALARM_1, true); 
-  // raise interrupt each time seconds are like now plus 10
-  int alarmSeconds = second(ds3232.get() + 10) % 60;
-  ds3232.setAlarm(ALM1_MATCH_SECONDS, alarmSeconds, 0, 0, 0);  
-  if (serialUsed) {
-    Serial.print("Wake up alarm set for seconds at ");
-    Serial.println(alarmSeconds);
+  if (useSleep) {
+    dateNextRecordOnSD = ds3232.get();
+    digitalWrite(pinInterrupt, HIGH); // enable pull up
+    ds3232.alarmInterrupt(ALARM_1, true);
+    isSleeping = false;
   }
-#endif
 }
+
 
 
 //*****************************************************************
@@ -473,20 +466,50 @@ void setup()
 
 void loop()
 {
-#ifdef SLEEPING
-  goToSleep();
-  return;
-#endif
-
-  // make measure if time to do so
-  long dateNow = now(); // in seconds
-  if (dateNow - dateLastRecord > delayBetweenRecords) {
-    dateLastRecord = dateNow;
-    performMeasures(true);
-  }
-  // Serial.println(F("wait"));
   button.poll();
   rot.poll();
+
+  if (isSleeping) {
+    isSleeping = false;
+    if (useSerial) {
+      Serial.println("Exit sleep");
+    }
+  }
+
+  if (useSleep) {
+
+    performMeasures(true);
+
+    Serial.println("Enter sleep");
+    delay(100);
+
+    ds3232.alarm1(); // reset alarm
+    dateNextRecordOnSD += delayBetweenRecordsOnSD;
+    time_t dateNow = ds3232.get();
+    if (dateNextRecordOnSD <= dateNow) { // if target date is in the past, catch up
+      dateNextRecordOnSD = dateNow + delayBetweenRecordsOnSD;
+    }
+    ds3232.setAlarm1(dateNextRecordOnSD);
+    isSleeping = true;
+    AC_Sleep::enterSleepOnInterrupt(idInterrupt, wake, LOW);
+
+  } else {
+
+    time_t dateNow = now(); // in seconds
+    if (dateNow > dateNextRecordOnSD) {
+      dateNextRecordOnSD += delayBetweenRecordsOnSD;
+      dateNextRecordOnScreen = dateNow + delayBetweenRecordsOnScreen;
+      performMeasures(true); // save on SD
+
+      if (dateNextRecordOnSD <= dateNow) { // if target date is in the past, catch up
+        dateNextRecordOnSD = dateNow + delayBetweenRecordsOnSD;
+      }
+    } else if (dateNow > dateNextRecordOnScreen) {
+      dateNextRecordOnScreen += delayBetweenRecordsOnScreen;
+      performMeasures(false); // don't save on SD
+    }
+  }
+
   delay(50);
 }
 

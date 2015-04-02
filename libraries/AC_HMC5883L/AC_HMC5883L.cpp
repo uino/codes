@@ -172,8 +172,8 @@ float AC_HMC5883L::getHeading() {
 }
 
 void AC_HMC5883L::beginCalibration() {
-  minv = { 1000, 1000, 1000 };
-  maxv = { -1000, -1000, -1000 };
+  minv = Vector(1000, 1000, 1000);
+  maxv = Vector(-1000, -1000, -1000);
 }
 
 void AC_HMC5883L::endCalibration() {

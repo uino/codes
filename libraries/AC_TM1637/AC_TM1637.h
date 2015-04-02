@@ -124,14 +124,14 @@ public:
     * Add these bitmask using the "|" symbol to compose values
     * that can bet provided to the setSegments function.
     */
-  const int SEG_A = 0b00000001;
-  const int SEG_B = 0b00000010;
-  const int SEG_C = 0b00000100;
-  const int SEG_D = 0b00001000;
-  const int SEG_E = 0b00010000;
-  const int SEG_F = 0b00100000;
-  const int SEG_G = 0b01000000;
-  const int POINT = 0b10000000;
+  static const int SEG_A = 0b00000001;
+  static const int SEG_B = 0b00000010;
+  static const int SEG_C = 0b00000100;
+  static const int SEG_D = 0b00001000;
+  static const int SEG_E = 0b00010000;
+  static const int SEG_F = 0b00100000;
+  static const int SEG_G = 0b01000000;
+  static const int POINT = 0b10000000;
 
 
 //---------------------------------------------------------------------
@@ -148,9 +148,9 @@ private:
   void segmentsForInt(int value, boolean leadingZero, byte* segments);
   void segmentsForInvalid(byte* segments);
 
-  const int COMM1 = 0x40;
-  const int COMM2 = 0xC0;
-  const int COMM3 = 0x80;
+  static const int COMM1 = 0x40;
+  static const int COMM2 = 0xC0;
+  static const int COMM3 = 0x80;
 
   static const byte segmentOfDigitData[];
 

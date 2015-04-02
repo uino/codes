@@ -66,7 +66,7 @@ public:
 
 //---------------------------------------------------------------------
 private:
-  const int DS1307_I2C_ADDRESS = 0x68;
+  static const int DS1307_I2C_ADDRESS = 0x68;
   byte decToBcd(byte val);
   byte bcdToDec(byte val); 
 

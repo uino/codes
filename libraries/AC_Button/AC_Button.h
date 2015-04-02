@@ -25,7 +25,7 @@ typedef void (*eventHandler)(void);
 class AC_Button
 {
 public:
-  const int NEVER = -1;
+  static const int NEVER = -1;
 
   /** 
     * Construct a new buttonLong device given the pin of the button

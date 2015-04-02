@@ -211,7 +211,7 @@ class AC_HMC5883L
 //---------------------------------------------------------------------
 
 private:
-  const byte deviceAddress = 0x1E; //0011110b, I2C 7bit address of HMC5883
+  static const byte deviceAddress = 0x1E; //0011110b, I2C 7bit address of HMC5883
   Vector offset;
   Vector scale;
   float declination;

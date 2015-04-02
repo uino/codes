@@ -11,7 +11,7 @@
 
 // Nokia5110 : for display
 // (pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin)
-AC_Nokia5110_light screen(3, 4, 5, 11, 13, 7);
+AC_Nokia5110_light screen(3, 4, 5, 11, 13, 9);
 
 const int nbRows = AC_Nokia5110_light::LCD_ROWS;
 

@@ -12,6 +12,8 @@
 #include <Time.h>
 #include <Wire.h>
 #include <AC_Nokia5110_light.h>
+#include <AC_RAM.h>
+#include <AC_Vector.h>
 
 //*****************************************************************
 
@@ -256,6 +258,143 @@ void screenProcess() {
   screenUpdate();
 }
 
+
+//*****************************************************************
+
+void printTime(time_t t) {
+  Serial.print(year(t)); 
+  Serial.print('/');
+  Serial.print(month(t));
+  Serial.print('/');
+  Serial.print(day(t));
+  Serial.print(' ');
+  Serial.print(hour(t));
+  Serial.print(':');
+  Serial.print(minute(t));
+  Serial.print(':');
+  Serial.print(second(t));
+  Serial.println(); 
+}
+
+
+//*****************************************************************
+// TODO: factorize into library
+
+// Wiring of accelerometer
+const int pinX = A0;
+const int pinY = A1;
+const int pinZ = A2;
+
+// calibration.
+const int minX = 270;
+const int maxX = 408;
+const int minY = 261;
+const int maxY = 402;
+const int minZ = 261;
+const int maxZ = 397;
+
+// local logging
+Vector accelLow, accelHigh;
+
+// global logging, every 1 minute (5 seconds for demos), for 12 hours max
+int accelNbReports = 0;
+const int accelMaxNbReports = 1000;
+byte accelReports[accelMaxNbReports];
+
+/*byte accelReports[maxNbReports/2]; // fits two values per byte
+void accelSetReport(int i, int v) {
+  if (v < 0)
+    v = 0;
+  if (v > 15)
+    v = 15;
+  int k = i/2;
+  if (i % 2 == 0) {
+    accelReports[k] = (accelReports[k] >> 4) << 4;
+  } 
+}
+*/
+
+// float version of the Arduino "map" function
+float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+// const int accelLoggingPeriod = 5; // seconds
+long accelLastProcessDate = 0; // milliseconds 
+time_t accelStartReportDate = 0; //seconds
+time_t accelLastReportDate = 0; //seconds
+
+// converts the norm of the acceleration vector (from normalized measures)
+// into a value from 0 to 15.
+int shock(float v) {
+  const int nbBoundries = 15;
+  float boundries[nbBoundries] = {  // approximately pow(1.4,x)/25
+    0.05, 0.07, 0.10, 0.15, 0.22, 
+    0.30, 0.42, 0.60, 0.82, 1.15, 
+    1.60, 2.30, 3.10, 4.40, 6.20 };
+  for (int i = 0; i < nbBoundries; i++) {
+    if (v < boundries[i])
+      return i;
+  }
+  return nbBoundries;
+}
+
+void accelDump() {
+  Serial.begin(9600);
+  Serial.print("MeasuresStart:\t");
+  Serial.print(accelStartReportDate);
+  Serial.print("\t");
+  printTime(accelStartReportDate);
+  Serial.print("NbMeasure:\t");
+  Serial.println(accelNbReports);
+  for (int i = 0; i < accelNbReports; i++) {
+    Serial.println(accelReports[i]);
+  }
+}
+
+void accelSetup() {
+  Serial.println("MeasuresReset");
+  accelLow = Vector();
+  accelHigh = Vector();
+  accelStartReportDate = ds3232.get(); 
+  accelNbReports = 0;
+}
+
+void accelProcess() {
+  int x = analogRead(pinX);
+  int y = analogRead(pinY);
+  int z = analogRead(pinZ);
+
+  // TODO: introduce min/max/normalize functions on vectors
+  float xg = mapFloat(x, minX, maxX, 1., -1);
+  float yg = mapFloat(y, minY, maxY, 1., -1);
+  float zg = mapFloat(z, minZ, maxZ, 1., -1);
+  accelLow.x = min(accelLow.x, xg);
+  accelLow.y = min(accelLow.y, yg);
+  accelLow.z = min(accelLow.z, zg);
+  accelHigh.x = max(accelHigh.x, xg);
+  accelHigh.y = max(accelHigh.y, yg);
+  accelHigh.z = max(accelHigh.z, zg);
+
+  long now = millis();
+  if (now - accelLastProcessDate < 300 || accelNbReports >= accelMaxNbReports)
+    return;
+  accelLastProcessDate = now + 1000; // at least one sec before next measure
+  currentTime = ds3232.get();
+  if (second(currentTime) % 2 == 0) { // every 2 seconds
+    accelLastReportDate = currentTime; // not needed for now
+    Vector move = accelHigh - accelLow;  // each direction between +/- 3.2 roughly
+    float strength = move.norm(); // between 0 and 16 roughtly
+    int value = shock(move.norm());
+    accelReports[accelNbReports++] = value;
+    Serial.print("Measure:\t");
+    Serial.println(value);
+    accelLow = Vector(xg, yg, zg);
+    accelHigh = Vector(xg, yg, zg);
+  }
+}
+
+
 //*****************************************************************
 
 
@@ -322,7 +461,11 @@ void buttonProcess() {
   } else if (!isDown && buttonDateDown != 0) { // goes up
     long duration = millis() - buttonDateDown;
     buttonDateDown = 0;
-    if (duration < buttonLongClickDuration)
+    if (duration > 6000) // reset
+      accelSetup();
+    else if (duration > 3000) // dump
+      accelDump();
+    else if (duration < buttonLongClickDuration)
       buttonShortClick();
     else 
       buttonLongClick();
@@ -337,23 +480,6 @@ void buttonProcess() {
   }
 }
 
-
-//*****************************************************************
-
-void printTime(time_t t) {
-  Serial.print(year(t)); 
-  Serial.print('/');
-  Serial.print(month(t));
-  Serial.print('/');
-  Serial.print(day(t));
-  Serial.print(' ');
-  Serial.print(hour(t));
-  Serial.print(':');
-  Serial.print(minute(t));
-  Serial.print(':');
-  Serial.print(second(t));
-  Serial.println(); 
-}
 
 //*****************************************************************
 
@@ -420,6 +546,13 @@ void setup()
   wakeActive = false;
   wakeHour = 7; 
   wakeMinute = 30;
+
+  // Accelerometer
+  accelSetup();
+
+  // Debug
+  Serial.print(F("SRAM free: "));
+  Serial.println(AC_RAM::getFree());
 }
 
 
@@ -430,6 +563,7 @@ void loop()
 {
   wakeProcess();
   alarmProcess();
+  accelProcess();
   buttonProcess();
   screenProcess();
   delay(30);

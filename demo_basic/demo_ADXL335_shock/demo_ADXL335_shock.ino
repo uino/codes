@@ -4,7 +4,9 @@
  * Code by Arthur Chargueraud.
  * This code is GNU GPL v3.
  *
- * Reports how much acceleration (in any direction) is measured.
+ * Reports how much acceleration (in any direction) is measured:
+ * - on a logarithmic scale, with a value between 0 and 15 (always)
+ * - on a linear scale, with a value between 30 and 16k (approximately)
  *
  * Wiring: 
  * - connect x-output to pinX  (A0 by default)
@@ -33,14 +35,33 @@ float mapFloat(float x, float in_min, float in_max, float out_min, float out_max
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+Vector low, high;
+
 void setup(){
   Serial.begin(115200); 
   Serial.println("Starting up"); 
+
+  low = Vector();
+  high = Vector();
 }
 
-Vector low, high;
-const int delayBetweenReports = 20; // millis
+const int delayBetweenReports = 200; // millis
 long dateLastReport = 0;
+
+// converts the norm of the acceleration vector (from normalized measures)
+// into a value from 0 to 15.
+int shock(float v) {
+  const int nbBoundries = 15;
+  float boundries[nbBoundries] = {  // approximately pow(1.4,x)/25
+    0.05, 0.07, 0.10, 0.15, 0.22, 
+    0.30, 0.42, 0.60, 0.82, 1.15, 
+    1.60, 2.30, 3.10, 4.40, 6.20 };
+  for (int i = 0; i < nbBoundries; i++) {
+    if (v < boundries[i])
+      return i;
+  }
+  return nbBoundries;
+}
 
 void loop(){
 
@@ -64,7 +85,7 @@ void loop(){
   if (dateNow - dateLastReport > delayBetweenReports) {
     dateLastReport = dateNow;
     Vector move = high - low;  // each direction between +/- 3.2 roughly
-    float strength = move.norm(); // between 0 and 12 roughtly
+    float strength = move.norm(); // between 0 and 16 roughtly
     /*
     Serial.print((int) (move.x * 100));
     Serial.print("\t");
@@ -74,7 +95,10 @@ void loop(){
     Serial.print("\t");
     Serial.println((int) (move.norm() * 100));
     */
-    Serial.println((int) (move.norm() * 1000) ); 
+    // 
+    Serial.print(shock(move.norm()));  
+    Serial.print("\t");  
+    Serial.println((int) (move.norm() * 1000) );
     /*
     int nb = 1 + (int) (3 * strength); // at most 36 X's
     for (int i = 0; i < nb; i++) {
@@ -87,6 +111,6 @@ void loop(){
     high = Vector(xg, yg, zg);
   }
 
-  delay(1);
+  delay(10);
 }
 

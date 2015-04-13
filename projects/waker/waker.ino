@@ -6,6 +6,8 @@
 
 // #include <Arduino>
 
+// #define TESTING 1
+
 //*****************************************************************
 
 #include <DS3232RTC.h> 
@@ -173,91 +175,6 @@ void alarmProcess() {
 }
 
 
-//*****************************************************************
-
-const long screenKeepLightDuration = 4 * 1000; // ms
-long screenLastProcessDate = 0;
-long screenKeepLightSinceDate = 0;
-
-void showTime(int line, int col, int hour, int minute, int seconds = 0, boolean showSeconds = false) {
-  screen.setInt(hour, line, col, 2, false);
-  col += 2;
-  screen.setString(":", line, col);
-  col += 1;
-  screen.setInt(minute, line, col, 2, true);
-  col += 2;
-  if (showSeconds) {
-    screen.setString(":", line, col);
-    col += 1;
-    screen.setInt(seconds, line, col, 2, true);
-    col += 2;
-  }
-}
-
-void screenEditor(int line, int colInfos) {
-  switch (editorStatus) {
-    case 0: { 
-      break; }
-    case 1: { 
-      if (wakeActive)
-        screen.setString("activated", line, 0);
-      else
-        screen.setString("deactivated", line, 0);
-      break; }
-    case 2: { 
-      screen.setString("+", line, colInfos+1);
-      break; }
-    case 3: { 
-      screen.setString("-", line, colInfos+1);
-      break; }
-    case 4: { 
-      screen.setString("+", line, colInfos+4);
-      break; }
-    case 5: { 
-      screen.setString("-", line, colInfos+4);
-      break; }
-    default: { 
-      break; }
-  }
-}
-
-void screenUpdate() {
-  currentTime = ds3232.get(); // might cache this value
-  int line = 0;
-  int colInfos = 6;
-  screen.clearDisplay(); 
-  screen.setString("time :", line, 0);
-  showTime(line, colInfos, hour(currentTime), minute(currentTime), second(currentTime), true);
-  line++;
-  screen.setString("alarm:", line, 0);
-  if (wakeActive)
-    showTime(line, colInfos, wakeHour, wakeMinute);
-  else
-    screen.setString("off", line, colInfos);
-  line++;
-  screenEditor(line, colInfos);
-  screen.updateDisplay(); 
-}
-
-void screenKeepLight() {
-  screenKeepLightSinceDate = millis();
-  digitalWrite(pinNokiaBacklight, HIGH);
-  //screenActive = true;
-}
-
-void screenProcess() {
-  //if (! screenActive)
-  //  return;
-  long now = millis();
-  if (now - screenLastProcessDate < 300)
-    return;
-  screenLastProcessDate = now;
-  if (now - screenKeepLightSinceDate > screenKeepLightDuration) {
-    digitalWrite(pinNokiaBacklight, LOW);
-  }
-  screenUpdate();
-}
-
 
 //*****************************************************************
 
@@ -275,7 +192,6 @@ void printTime(time_t t) {
   Serial.print(second(t));
   Serial.println(); 
 }
-
 
 //*****************************************************************
 // TODO: factorize into library
@@ -381,7 +297,11 @@ void accelProcess() {
     return;
   accelLastProcessDate = now + 1000; // at least one sec before next measure
   currentTime = ds3232.get();
+#ifdef TESTING
   if (second(currentTime) % 2 == 0) { // every 2 seconds
+#else
+  if (second(currentTime) == 0) { // every 1 minute
+#endif
     accelLastReportDate = currentTime; // not needed for now
     Vector move = accelHigh - accelLow;  // each direction between +/- 3.2 roughly
     float strength = move.norm(); // between 0 and 16 roughtly
@@ -392,6 +312,100 @@ void accelProcess() {
     accelLow = Vector(xg, yg, zg);
     accelHigh = Vector(xg, yg, zg);
   }
+}
+
+
+
+//*****************************************************************
+
+const long screenKeepLightDuration = 4 * 1000; // ms
+long screenLastProcessDate = 0;
+long screenKeepLightSinceDate = 0;
+
+void showTime(int line, int col, int hour, int minute, int seconds = 0, boolean showSeconds = false) {
+  screen.setInt(hour, line, col, 2, false);
+  col += 2;
+  screen.setString(":", line, col);
+  col += 1;
+  screen.setInt(minute, line, col, 2, true);
+  col += 2;
+  if (showSeconds) {
+    screen.setString(":", line, col);
+    col += 1;
+    screen.setInt(seconds, line, col, 2, true);
+    col += 2;
+  }
+}
+
+void screenEditor(int line, int colInfos) {
+  switch (editorStatus) {
+    case 0: { 
+      break; }
+    case 1: { 
+      if (wakeActive)
+        screen.setString("activated", line, 0);
+      else
+        screen.setString("deactivated", line, 0);
+      break; }
+    case 2: { 
+      screen.setString("+", line, colInfos+1);
+      break; }
+    case 3: { 
+      screen.setString("-", line, colInfos+1);
+      break; }
+    case 4: { 
+      screen.setString("+", line, colInfos+4);
+      break; }
+    case 5: { 
+      screen.setString("-", line, colInfos+4);
+      break; }
+    default: { 
+      break; }
+  }
+}
+
+void screenUpdate() {
+  currentTime = ds3232.get(); // might cache this value
+  int line = 0;
+  int colInfos = 6;
+  screen.clearDisplay(); 
+  screen.setString("time :", line, 0);
+  showTime(line, colInfos, hour(currentTime), minute(currentTime), second(currentTime), true);
+  line++;
+  screen.setString("alarm:", line, 0);
+  if (wakeActive)
+    showTime(line, colInfos, wakeHour, wakeMinute);
+  else
+    screen.setString("off", line, colInfos);
+  line++;
+  screenEditor(line, colInfos);
+  line++;
+  screen.setString("meas:", line, 0);
+  screen.setInt(accelNbReports, line, colInfos, 5, false);
+  if (accelNbReports > 0) {
+    screen.setString("last:", line, 0);
+    screen.setInt(accelReports[accelNbReports-1], line, colInfos, 2, false);
+  }
+  screen.updateDisplay(); 
+}
+
+void screenKeepLight() {
+  screenKeepLightSinceDate = millis();
+  digitalWrite(pinNokiaBacklight, HIGH);
+  //screenActive = true;
+}
+
+void screenProcess() {
+  //if (! screenActive)
+  //  return;
+  long now = millis();
+  if (now - screenLastProcessDate < 300)
+    return;
+  screenLastProcessDate = now;
+  if (now - screenKeepLightSinceDate > screenKeepLightDuration) {
+    digitalWrite(pinNokiaBacklight, LOW);
+  }
+  screenUpdate();
 }
 
 

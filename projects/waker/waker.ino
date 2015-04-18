@@ -6,7 +6,7 @@
 
 // #include <Arduino>
 
-// #define TESTING 1
+ #define TESTING 1
 
 //*****************************************************************
 
@@ -212,23 +212,61 @@ const int maxZ = 397;
 // local logging
 Vector accelLow, accelHigh;
 
-// global logging, every 1 minute (5 seconds for demos), for 12 hours max
+// global logging, every 6 seconds for 10 hours (every 2 seconds in testing mode)
 int accelNbReports = 0;
-const int accelMaxNbReports = 1000;
-byte accelReports[accelMaxNbReports];
 
-/*byte accelReports[maxNbReports/2]; // fits two values per byte
-void accelSetReport(int i, int v) {
-  if (v < 0)
-    v = 0;
-  if (v > 15)
-    v = 15;
-  int k = i/2;
-  if (i % 2 == 0) {
-    accelReports[k] = (accelReports[k] >> 4) << 4;
-  } 
+const int accelNbBitsPerValue = 3;
+#ifdef TESTING
+int accelReportPeriod = 2; // seconds
+const int accelMaxNbReports = 200;
+const int accelNbValuesPerLong = 4;
+#else
+int accelReportPeriod = 6; // seconds
+const int accelMaxNbReports = 6000;
+const int accelNbValuesPerLong = 21;
+#endif
+unsigned long accelReports[accelMaxNbReports/accelNbValuesPerLong]; // fits 21  3-bit values per long value
+
+int accelReportsGet(int i) {
+  unsigned long v = accelReports[i / accelNbValuesPerLong];
+  int s = accelNbBitsPerValue * (i % accelNbValuesPerLong); 
+  return (int) ((v >> s) % (1 << accelNbBitsPerValue)); 
 }
-*/
+
+void accelReportsDump() {
+  Serial.print("Dump: ");
+  int n = 0;
+  int r = (1 << accelNbBitsPerValue);
+  for (int k = 0; true; k++) {
+    unsigned long v = accelReports[k];
+    for (int p = 0; p < accelNbValuesPerLong; p++) {
+      if (n == accelNbReports)
+        goto out;
+      n++;
+      Serial.print((int) (v % r));
+      Serial.print(" ");
+      v /= r;   
+    }
+  }
+ out:
+  Serial.println("");
+}
+
+
+void accelReportsSet(int i, int v) {
+#ifdef TESTING
+  accelReportsDump();
+#endif
+  if (v < 0 || v >= (1 << accelNbBitsPerValue))
+    return; // error
+  unsigned long oldv = accelReports[i / accelNbValuesPerLong];
+  int s = accelNbBitsPerValue * (i % accelNbValuesPerLong);
+  int snext = s + accelNbBitsPerValue;
+  unsigned long high = (oldv >> snext) << snext;
+  unsigned long low = oldv % (1 << s);
+  unsigned long newv = high + (v << s) + low;
+  accelReports[i / accelNbValuesPerLong] = newv;
+}
 
 // float version of the Arduino "map" function
 float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
@@ -241,13 +279,11 @@ time_t accelStartReportDate = 0; //seconds
 time_t accelLastReportDate = 0; //seconds
 
 // converts the norm of the acceleration vector (from normalized measures)
-// into a value from 0 to 15.
+// into a value from 0 to 7.
 int shock(float v) {
-  const int nbBoundries = 15;
-  float boundries[nbBoundries] = {  // approximately pow(1.4,x)/25
-    0.05, 0.07, 0.10, 0.15, 0.22, 
-    0.30, 0.42, 0.60, 0.82, 1.15, 
-    1.60, 2.30, 3.10, 4.40, 6.20 };
+  const int nbBoundries = 7;
+  float boundries[nbBoundries] = {  
+    0.038, 0.046, 0.052, 0.06, 0.08, 0.12, 0.25 };
   for (int i = 0; i < nbBoundries; i++) {
     if (v < boundries[i])
       return i;
@@ -264,7 +300,7 @@ void accelDump() {
   Serial.print("NbMeasure:\t");
   Serial.println(accelNbReports);
   for (int i = 0; i < accelNbReports; i++) {
-    Serial.println(accelReports[i]);
+    Serial.println(accelReportsGet(i));
   }
 }
 
@@ -292,21 +328,23 @@ void accelProcess() {
   accelHigh.y = max(accelHigh.y, yg);
   accelHigh.z = max(accelHigh.z, zg);
 
+  if (accelNbReports >= accelMaxNbReports)
+    return;
+  /*
   long now = millis();
   if (now - accelLastProcessDate < 300 || accelNbReports >= accelMaxNbReports)
     return;
-  accelLastProcessDate = now + 1000; // at least one sec before next measure
+  accelLastProcessDate = now + 300; // wait a bit before next time measure
   currentTime = ds3232.get();
-#ifdef TESTING
-  if (second(currentTime) % 2 == 0) { // every 2 seconds
-#else
-  if (second(currentTime) == 0) { // every 1 minute
-#endif
-    accelLastReportDate = currentTime; // not needed for now
+  */
+  currentTime = now();
+  if (currentTime > accelLastProcessDate && 
+      currentTime % accelReportPeriod == 0) { 
+    accelLastReportDate = currentTime;
     Vector move = accelHigh - accelLow;  // each direction between +/- 3.2 roughly
     float strength = move.norm(); // between 0 and 16 roughtly
     int value = shock(move.norm());
-    accelReports[accelNbReports++] = value;
+    accelReportsSet(accelNbReports++, value);
     Serial.print("Measure:\t");
     Serial.println(value);
     accelLow = Vector(xg, yg, zg);
@@ -382,10 +420,16 @@ void screenUpdate() {
   line++;
   screen.setString("meas:", line, 0);
   screen.setInt(accelNbReports, line, colInfos, 5, false);
+  line++;
   if (accelNbReports > 0) {
     screen.setString("last:", line, 0);
-    screen.setInt(accelReports[accelNbReports-1], line, colInfos, 2, false);
+    screen.setInt(accelReportsGet(accelNbReports-1), line, colInfos, 2, false);
   }
+  /*
+  line++;
+  screen.setString("cur:", line, 0);
+  screen.setInt(cur, line, colInfos, 2, false);
+  */
   screen.updateDisplay(); 
 }
 
@@ -542,6 +586,11 @@ void setup()
   Serial.begin(9600);   
   Serial.println("Starting up");
   delay(100);
+
+  // Time
+  setSyncProvider(ds3232.get);
+  if (timeStatus() != timeSet) 
+     Serial.println("Time.h: unable to sync with the RTC");
 
   // Screen
   screen.begin();

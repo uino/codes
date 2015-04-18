@@ -6,7 +6,7 @@
 
 // #include <Arduino>
 
- #define TESTING 1
+// #define TESTING 1
 
 //*****************************************************************
 
@@ -190,7 +190,6 @@ void printTime(time_t t) {
   Serial.print(minute(t));
   Serial.print(':');
   Serial.print(second(t));
-  Serial.println(); 
 }
 
 //*****************************************************************
@@ -216,29 +215,55 @@ Vector accelLow, accelHigh;
 int accelNbReports = 0;
 
 const int accelNbBitsPerValue = 3;
+const int accelNbValuesPerLong = 5;
 #ifdef TESTING
-int accelReportPeriod = 2; // seconds
+int accelReportPeriod = 1; // seconds
 const int accelMaxNbReports = 200;
-const int accelNbValuesPerLong = 4;
 #else
-int accelReportPeriod = 6; // seconds
-const int accelMaxNbReports = 6000;
-const int accelNbValuesPerLong = 21;
+int accelReportPeriod = 12; // seconds
+const int accelMaxNbReports = 3000; // 10 hours of measures
 #endif
-unsigned long accelReports[accelMaxNbReports/accelNbValuesPerLong]; // fits 21  3-bit values per long value
+int accelReports[accelMaxNbReports/accelNbValuesPerLong]; // fits 5  3-bit values per int value
+
+// const int accelLoggingPeriod = 5; // seconds
+long accelLastProcessDate = 0; // milliseconds 
+time_t accelStartReportDate = 0; //seconds
+time_t accelLastReportDate = 0; //seconds
 
 int accelReportsGet(int i) {
-  unsigned long v = accelReports[i / accelNbValuesPerLong];
+  int v = accelReports[i / accelNbValuesPerLong];
   int s = accelNbBitsPerValue * (i % accelNbValuesPerLong); 
   return (int) ((v >> s) % (1 << accelNbBitsPerValue)); 
 }
 
-void accelReportsDump() {
-  Serial.print("Dump: ");
+void accelDump() {
+#ifndef TESTING
+  Serial.begin(9600);
+#endif
+  Serial.print(F("CurrentTime:\t"));
+  time_t currentTime = ds3232.get();
+  printTime(currentTime);
+  Serial.print("\t");
+  Serial.println(currentTime);
+  Serial.print(F("MeasuresStart:\t"));
+  printTime(accelStartReportDate);
+  Serial.print("\t");
+  Serial.println(accelStartReportDate);
+  Serial.print(F("NbMeasureExpected:\t"));
+  Serial.println((currentTime - accelStartReportDate) / accelReportPeriod);
+  Serial.print(F("NbMeasureRealized:\t"));
+  Serial.println(accelNbReports);
+  for (int i = 0; i < accelNbReports; i++) {
+    Serial.println(accelReportsGet(i));
+  }
+}
+
+void accelDumpValuesRaw() {
+  Serial.print(F("Dump: "));
   int n = 0;
   int r = (1 << accelNbBitsPerValue);
   for (int k = 0; true; k++) {
-    unsigned long v = accelReports[k];
+    int v = accelReports[k];
     for (int p = 0; p < accelNbValuesPerLong; p++) {
       if (n == accelNbReports)
         goto out;
@@ -254,29 +279,30 @@ void accelReportsDump() {
 
 
 void accelReportsSet(int i, int v) {
-#ifdef TESTING
-  accelReportsDump();
-#endif
   if (v < 0 || v >= (1 << accelNbBitsPerValue))
     return; // error
-  unsigned long oldv = accelReports[i / accelNbValuesPerLong];
+  int oldv = accelReports[i / accelNbValuesPerLong];
   int s = accelNbBitsPerValue * (i % accelNbValuesPerLong);
   int snext = s + accelNbBitsPerValue;
-  unsigned long high = (oldv >> snext) << snext;
-  unsigned long low = oldv % (1 << s);
-  unsigned long newv = high + (v << s) + low;
+  int high = (oldv >> snext) << snext;
+  int low = oldv % (1 << s);
+  int newv = high + (v << s) + low;
   accelReports[i / accelNbValuesPerLong] = newv;
+#ifdef TESTING
+  Serial.print(F("Values: "));
+  for (int i = 0; i < accelNbReports; i++) {
+    Serial.print(accelReportsGet(i));
+    Serial.print(" ");
+  }
+  Serial.println("");
+  accelDumpValuesRaw();
+#endif
 }
 
 // float version of the Arduino "map" function
 float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
-
-// const int accelLoggingPeriod = 5; // seconds
-long accelLastProcessDate = 0; // milliseconds 
-time_t accelStartReportDate = 0; //seconds
-time_t accelLastReportDate = 0; //seconds
 
 // converts the norm of the acceleration vector (from normalized measures)
 // into a value from 0 to 7.
@@ -291,21 +317,8 @@ int shock(float v) {
   return nbBoundries;
 }
 
-void accelDump() {
-  Serial.begin(9600);
-  Serial.print("MeasuresStart:\t");
-  Serial.print(accelStartReportDate);
-  Serial.print("\t");
-  printTime(accelStartReportDate);
-  Serial.print("NbMeasure:\t");
-  Serial.println(accelNbReports);
-  for (int i = 0; i < accelNbReports; i++) {
-    Serial.println(accelReportsGet(i));
-  }
-}
-
 void accelSetup() {
-  Serial.println("MeasuresReset");
+  Serial.println(F("MeasuresReset"));
   accelLow = Vector();
   accelHigh = Vector();
   accelStartReportDate = ds3232.get(); 
@@ -340,12 +353,14 @@ void accelProcess() {
   currentTime = now();
   if (currentTime > accelLastProcessDate && 
       currentTime % accelReportPeriod == 0) { 
-    accelLastReportDate = currentTime;
+    accelLastProcessDate = currentTime;
+    accelLastReportDate = currentTime; // not currently used
     Vector move = accelHigh - accelLow;  // each direction between +/- 3.2 roughly
     float strength = move.norm(); // between 0 and 16 roughtly
     int value = shock(move.norm());
-    accelReportsSet(accelNbReports++, value);
-    Serial.print("Measure:\t");
+    accelReportsSet(accelNbReports, value);
+    accelNbReports++;
+    Serial.print(F("Measure:\t"));
     Serial.println(value);
     accelLow = Vector(xg, yg, zg);
     accelHigh = Vector(xg, yg, zg);
@@ -519,7 +534,7 @@ void buttonProcess() {
   } else if (!isDown && buttonDateDown != 0) { // goes up
     long duration = millis() - buttonDateDown;
     buttonDateDown = 0;
-    if (duration > 6000) // reset
+    if (duration > 10000) // reset
       accelSetup();
     else if (duration > 3000) // dump
       accelDump();
@@ -584,13 +599,13 @@ void setup()
 
   // Serial
   Serial.begin(9600);   
-  Serial.println("Starting up");
+  Serial.println(F("Starting up"));
   delay(100);
 
   // Time
   setSyncProvider(ds3232.get);
   if (timeStatus() != timeSet) 
-     Serial.println("Time.h: unable to sync with the RTC");
+     Serial.println(F("Time.h: unable to sync with the RTC"));
 
   // Screen
   screen.begin();
@@ -598,8 +613,9 @@ void setup()
   screen.clearDisplay();
 
   // Display date
-  Serial.print("Date: ");
+  Serial.print(F("Date: "));
   printTime(ds3232.get());
+  Serial.println(""); 
   delay(100);
 
   // All output off

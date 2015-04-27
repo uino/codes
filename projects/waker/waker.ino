@@ -7,6 +7,7 @@
 // #include <Arduino>
 
 // #define TESTING 1
+ #define REALTIME 1
 
 //*****************************************************************
 
@@ -211,19 +212,26 @@ const int maxZ = 397;
 // local logging
 Vector accelLow, accelHigh;
 
-// global logging, every 6 seconds for 10 hours (every 2 seconds in testing mode)
-int accelNbReports = 0;
+// global logging, every 6 seconds for 10 hours (every 1 second in real-time mode)
+long accelNbReports = 0;
 
 const int accelNbBitsPerValue = 3;
 const int accelNbValuesPerLong = 5;
 #ifdef TESTING
 int accelReportPeriod = 1; // seconds
-const int accelMaxNbReports = 200;
+const long accelMaxNbReports = 200;
+int accelReports[accelMaxNbReports/accelNbValuesPerLong]; // fits 5  3-bit values per int value
+#else
+#ifdef REALTIME
+int accelReportPeriod = 1; // seconds
+const long accelMaxNbReports = 10000000;
+int accelReports[0]; // unused
 #else
 int accelReportPeriod = 12; // seconds
-const int accelMaxNbReports = 3000; // 10 hours of measures
-#endif
+const long accelMaxNbReports = 3000; // 10 hours of measures
 int accelReports[accelMaxNbReports/accelNbValuesPerLong]; // fits 5  3-bit values per int value
+#endif
+#endif
 
 // const int accelLoggingPeriod = 5; // seconds
 long accelLastProcessDate = 0; // milliseconds 
@@ -329,6 +337,13 @@ void accelProcess() {
   int x = analogRead(pinX);
   int y = analogRead(pinY);
   int z = analogRead(pinZ);
+  /*
+    Serial.print(x);
+    Serial.print("\t");
+    Serial.print(y);
+    Serial.print("\t");
+    Serial.println(z);
+  */
 
   // TODO: introduce min/max/normalize functions on vectors
   float xg = mapFloat(x, minX, maxX, 1., -1);
@@ -358,10 +373,19 @@ void accelProcess() {
     Vector move = accelHigh - accelLow;  // each direction between +/- 3.2 roughly
     float strength = move.norm(); // between 0 and 16 roughtly
     int value = shock(move.norm());
+#ifdef REALTIME
+    Serial.print(F("CurrentTime:\t"));
+    time_t currentTime = ds3232.get();
+    printTime(currentTime);
+    Serial.print("\t");
+    Serial.print(F("Measure:\t"));
+    Serial.println(strength, 6);
+#else
     accelReportsSet(accelNbReports, value);
     accelNbReports++;
     Serial.print(F("Measure:\t"));
     Serial.println(value);
+#endif
     accelLow = Vector(xg, yg, zg);
     accelHigh = Vector(xg, yg, zg);
   }
@@ -434,7 +458,7 @@ void screenUpdate() {
   screenEditor(line, colInfos);
   line++;
   screen.setString("meas:", line, 0);
-  screen.setInt(accelNbReports, line, colInfos, 5, false);
+  screen.setInt((accelNbReports > 65000) ? accelNbReports : -1, line, colInfos, 6, false);
   line++;
   if (accelNbReports > 0) {
     screen.setString("last:", line, 0);

@@ -211,6 +211,7 @@ const int maxZ = 397;
 
 // local logging
 Vector accelLow, accelHigh;
+float strength;
 
 // global logging, every 6 seconds for 10 hours (every 1 second in real-time mode)
 long accelNbReports = 0;
@@ -346,9 +347,13 @@ void accelProcess() {
   */
 
   // TODO: introduce min/max/normalize functions on vectors
-  float xg = mapFloat(x, minX, maxX, 1., -1);
+  /* float xg = mapFloat(x, minX, maxX, 1., -1);
   float yg = mapFloat(y, minY, maxY, 1., -1);
   float zg = mapFloat(z, minZ, maxZ, 1., -1);
+  */
+  float xg = x;
+  float yg = y;
+  float zg = z;
   accelLow.x = min(accelLow.x, xg);
   accelLow.y = min(accelLow.y, yg);
   accelLow.z = min(accelLow.z, zg);
@@ -371,7 +376,7 @@ void accelProcess() {
     accelLastProcessDate = currentTime;
     accelLastReportDate = currentTime; // not currently used
     Vector move = accelHigh - accelLow;  // each direction between +/- 3.2 roughly
-    float strength = move.norm(); // between 0 and 16 roughtly
+    strength = move.norm(); // between 0 and 16 roughtly
     int value = shock(move.norm());
 #ifdef REALTIME
     Serial.print(F("CurrentTime:\t"));
@@ -382,10 +387,10 @@ void accelProcess() {
     Serial.println(strength, 6);
 #else
     accelReportsSet(accelNbReports, value);
-    accelNbReports++;
     Serial.print(F("Measure:\t"));
     Serial.println(value);
 #endif
+    accelNbReports++;
     accelLow = Vector(xg, yg, zg);
     accelHigh = Vector(xg, yg, zg);
   }
@@ -458,11 +463,15 @@ void screenUpdate() {
   screenEditor(line, colInfos);
   line++;
   screen.setString("meas:", line, 0);
-  screen.setInt((accelNbReports > 65000) ? accelNbReports : -1, line, colInfos, 6, false);
+  screen.setInt((accelNbReports < 65000l) ? accelNbReports : -1, line, colInfos, 6, false);
   line++;
   if (accelNbReports > 0) {
     screen.setString("last:", line, 0);
-    screen.setInt(accelReportsGet(accelNbReports-1), line, colInfos, 2, false);
+    // screen.setInt(accelReportsGet(accelNbReports-1), line, colInfos, 2, false);
+    float f = 10. * strength;
+    if (f > 10000.)
+      f = 10000.;
+    screen.setInt((int) f, line, colInfos, 5, false);
   }
   /*
   line++;

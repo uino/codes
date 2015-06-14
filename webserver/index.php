@@ -27,10 +27,11 @@ if (! empty($_GET['reset'])) {
 //----------------------------------------------------
 
 $autorefresh = ! empty($_GET['refresh']);
+$pageself = $_SERVER['PHP_SELF'];
 if ($autorefresh) {
-   $page = $_SERVER['PHP_SELF']."?refresh=1";
+   $pageself = $pageself."?refresh=1";
    $delay= "1";
-   header("Refresh: $delay; url=$page");
+   header("Refresh: $delay; url=$pageself");
 } 
 
 
@@ -52,7 +53,7 @@ div {
 
 
 <div>
-<form action='index.php' name='form' method='GET'>
+<form action='<?php echo $pageself; ?>' name='form' method='GET'>
 <div><input type='submit' name='reset' value='Reset log' /></div>
 <input type='submit' name='log' value='Test' /></div>
 </form>

@@ -1,3 +1,7 @@
+
+
+
+
 /**
  * Demo for the AC_Sleep library, for use with DS3232.
  * Code by Arthur Chargueraud.
@@ -12,9 +16,9 @@
 
 #include <Time.h>
 #include <Wire.h>
-#include <AC_Sleep.h> 
-#include <AC_DS3232.h> 
-
+#include <DS3232RTC.h>
+#include <AC_Sleep.h>
+#include <AC_DS3232.h>
 
 const byte idInterrupt = 0; // corresponds to pinInterrupt
 const byte pinInterrupt = 2; 

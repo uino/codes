@@ -20,7 +20,7 @@
  *
  */
 
-#define ARTHUR 1 // à commenter pour utilisation sur le vrai logger
+// #define ARTHUR 1 // à commenter pour utilisation sur le vrai logger
 
 //*****************************************************************
 /* Includes */
@@ -69,7 +69,7 @@ const boolean useSerial = true; // use "true" only for debugging
 boolean useSleep = true; 
 
 // Whether to show measures on screen
-boolean useScreen = false;
+boolean useScreen = true;
 
 
 //*****************************************************************
@@ -383,7 +383,7 @@ void performMeasures(boolean saveToSD) {
 
 void wake() {
   AC_Sleep::terminateSleep();
-  detachInterrupt(idInterrupt);
+  detachInterrupt(idInterrupt);      ///reveill
 }
 
 /*
@@ -472,17 +472,19 @@ void loop()
 
   if (isSleeping) {
     isSleeping = false;
+    
+    // alimenter
     if (useSerial) {
       Serial.println("Exit sleep");
     }
+    
   }
 
   if (useSleep) {
 
     performMeasures(true);
 
-    Serial.println("Enter sleep");
-    delay(100);
+    
 
     ds3232.alarm1(); // reset alarm
     dateNextRecordOnSD += delayBetweenRecordsOnSD;
@@ -491,8 +493,12 @@ void loop()
       dateNextRecordOnSD = dateNow + delayBetweenRecordsOnSD;
     }
     ds3232.setAlarm1(dateNextRecordOnSD);
+    
+    // enteindre 
+    Serial.println("Enter sleep");
+    delay(100);
     isSleeping = true;
-    AC_Sleep::enterSleepOnInterrupt(idInterrupt, wake, LOW);
+    AC_Sleep::enterSleepOnInterrupt(idInterrupt, wake, LOW);    
 
   } else {
 

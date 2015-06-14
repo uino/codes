@@ -6,9 +6,7 @@
 
 #include <SPI.h>
 #include <Ethernet.h>
-
-#define SERVER "www.test.fr"
-//==> sur la ligne ci dessus remplacer "test" par le bon nom
+#define SERVER "www.chargueraud.fr"
 
 
 // Enter a MAC address for your controller below.
@@ -45,7 +43,7 @@ void sendMessage(long message) {
 
   // if you get a connection, report back via serial:
   if (client.connect(SERVER, 80)) {
-    Serial.println("connected");
+    Serial.println("connected, sending message");
     client.print("GET /ino/index.php?log=");
     client.print(message); // le message à envoyer (sans caractères spéciaux)
     client.println(" HTTP/1.1");
@@ -60,16 +58,26 @@ void sendMessage(long message) {
     return;
   }
 
-  Serial.println("disconnecting.");
-  client.stop(); 
-  // (!client.connected())
+  while (true) {
+    // if there are incoming bytes available 
+    // from the server, read them and print them:
+    if (client.available()) {
+      char c = client.read();
+      Serial.print(c);
+    }
+    // if the server's disconnected, stop the client:
+    if (! client.connected()) {
+      Serial.println();
+      Serial.println("disconnecting.");
+      client.stop();
+    }
+    return;
+  }
 }
-
 
 
 void setup() {
   Serial.begin(9600);
-
 }
 
 long lastDate = 0;
@@ -77,7 +85,7 @@ long lastDate = 0;
 void loop()
 {
   long now = millis();
-  if (now - lastDate > 5000) { // message toutes les 5 secondes
+  if (now - lastDate > 15000) { // message toutes les 15 secondes
     lastDate = now;
     sendMessage(now);
   }

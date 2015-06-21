@@ -31,7 +31,6 @@ boolean isSleeping = false;
 long dateLastAlarm = 0;
 
 
-
 AC_DS3232 ds3232;
 
 void printTime(time_t t) {
@@ -56,8 +55,7 @@ void wake() {
 }
 
 void setup() {
-  pinMode(7, OUTPUT); digitalWrite(7, HIGH);  // TEMP: power the ds3232
-  
+ 
   Serial.begin(9600);   
   Serial.println("Starting up");
 

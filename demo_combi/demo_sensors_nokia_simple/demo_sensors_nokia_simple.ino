@@ -1,5 +1,7 @@
 /**
- * Demo for loggin on SD card, with display on Nokia screen.
+ * Demo for loggin on SD card, with display on Nokia screen;
+ * and deep spleeping mode (see demo_DS3232_AC_Sleep).
+ *
  * Code by Arthur Chargueraud.
  * This code is in the public domain.
  *
@@ -29,10 +31,16 @@
 #include <AC_RAM.h>
 #include <avr/pgmspace.h>
 #include "defs.h"
+#include <AC_Sleep.h>
+#include <AC_DS3232.h>
 
 
 //*****************************************************************
 /* Configuration */
+
+// Alimentation
+const byte pinAlimClock = 4;
+const byte pinAlimSPI = 9;
 
 // Log file parameters
 const boolean resetLogOnSetup = false;
@@ -47,17 +55,24 @@ const int SDhardwareCSPin = 10;
 // AC_Nokia5110 screen(3, 4, 5, 11, 13, 8);
 AC_Nokia5110_light screen(8, 7, 6, 11, 13, 0);
 boolean needRefresh = true;
+const long delayScreenRead = 2000; // milliseconds
 
+// ds3232 : for measuring clock and temperature, and alarm
+// DS3232RTC ds3232;
+AC_DS3232 ds3232;  // extends the original module
+const byte idInterrupt = 0; // corresponds to pinInterrupt
+const byte pinInterrupt = 2; 
 
-// ds3232 : for measuring clock and temperature
-DS3232RTC ds3232;
+// alarm
+const int periodWakeUp = 5; // seconds
+boolean isSleeping = false;
+long dateLastAlarm = 0;
 
 // SHT1x pins: dataPin, clockPin
 // SHT1x sht1x(9, 10);
 
 // Current measure
 const int measurePeriod = 3000; // milliseconds
-long dateLastMeasure = 0;
 bool lastMeasureWriteSuccessful = true;
 long lastMeasureWriteSize = 0;
 Record currentMeasure;   //include def.h
@@ -286,9 +301,13 @@ void displayMeasures(Record r) {
 
   // success of last write
   line++;
-  screen.setString("Size :", line, 0);
-  screen.setString("Temp.:", line, 0);
-  string_of_float((float) lastMeasureWriteSize, floatNbChars, 0, buffer);
+  if (lastMeasureWriteSize < 10000) {
+    screen.setString("Size :", line, 0);
+    string_of_float((float) lastMeasureWriteSize, floatNbChars, 0, buffer);
+  } else {
+    screen.setString("SizeM:", line, 0);
+    string_of_float((float) lastMeasureWriteSize/1000, floatNbChars, 0, buffer);
+  }
   screen.setString(buffer, line, 9);
 
   // finish
@@ -308,6 +327,15 @@ void displayPanel() {
 
 
 //*****************************************************************
+/* Alarm */
+
+void wake() {
+  AC_Sleep::terminateSleep();
+  detachInterrupt(idInterrupt);
+}
+
+
+//*****************************************************************
 /* Setup */
 
 void initializeTime() {
@@ -322,10 +350,25 @@ void initializeTime() {
   ds3232.write(initTime);
 }
 
+void alimOn() {
+  pinMode(pinAlimClock, OUTPUT);
+  digitalWrite(pinAlimClock, HIGH);
+  pinMode(pinAlimSPI, OUTPUT);
+  digitalWrite(pinAlimSPI, HIGH);
+}
+
+void alimOff() {
+  digitalWrite(pinAlimClock, LOW);
+  digitalWrite(pinAlimSPI, LOW);
+}
+
 void setup()
 {
   // Serial
   Serial.begin(9600); 
+
+  // Alim
+  alimOn();
 
   // Screen
   screen.begin();
@@ -351,33 +394,68 @@ void setup()
   }
 
   Serial.println(F("Starting")); 
+
+  // periodic wake up signal
+  dateLastAlarm = ds3232.get();
+  digitalWrite(pinInterrupt, HIGH); // enable pull up
+  ds3232.alarmInterrupt(ALARM_1, true); 
 }
 
 
 //*****************************************************************
 /* Main */
 
+long nbAlarmCycles = 0;
+
 void loop()
 {
-  long now = millis();
-  if (now - dateLastMeasure > measurePeriod) {
-    dateLastMeasure = now;
-    makeMeasures(currentMeasure);
-    if (SD.begin(SDselectPin)) {
-      printMeasureOnSerial(currentMeasure);
-      writeRecordToLog(currentMeasure);
-      lastMeasureWriteSuccessful = true;
-    } else {
-      Serial.println(F("Card failed or missing"));
-      lastMeasureWriteSuccessful = false;
-    }
-    needRefresh = true;
-    if (showSDContent) {
-      readFileSerialPrint();
-    }
-    report();
+  if (isSleeping) {
+    isSleeping = false;
+    Serial.println("Exit sleep");
+    alimOn();
   }
 
+  // for debugging only:
+  printTime(ds3232.get());
+  report();
+  nbAlarmCycles++;
+  Serial.print("Nb alarm cycles: ");
+  Serial.println(nbAlarmCycles);
+
+  // perform measures
+  makeMeasures(currentMeasure);
+  if (SD.begin(SDselectPin)) {
+    printMeasureOnSerial(currentMeasure);
+    writeRecordToLog(currentMeasure);
+    lastMeasureWriteSuccessful = true;
+  } else {
+    Serial.println(F("Card failed or missing"));
+    lastMeasureWriteSuccessful = false;
+  }
+  needRefresh = true;
+
+  // for debugging:
+  if (showSDContent) {
+    readFileSerialPrint();
+  }
+
+  // Display on screen
   displayPanel();
-  delay(50);
+  delay(delayScreenRead);
+
+  // Go back to sleep
+  Serial.println("Enter sleep");
+  delay(100);
+
+  ds3232.alarm1(); // reset alarm
+  dateLastAlarm += periodWakeUp;
+  time_t timeNow = ds3232.get();
+  if (dateLastAlarm <= timeNow) { // if target in the past, catch up
+    dateLastAlarm = timeNow + periodWakeUp;
+  }
+  ds3232.setAlarm1(dateLastAlarm);
+  alimOff();
+  isSleeping = true;
+  AC_Sleep::enterSleepOnInterrupt(idInterrupt, wake, LOW);
+
 }

@@ -9,6 +9,7 @@
  *
  * A button can used to go from a panel to the next.
  *
+ * ===TODO: fix the function timeIntoString like in demo_sensors_nokia_simple
  */
 
 #include <SPI.h>

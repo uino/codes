@@ -92,6 +92,8 @@ void report() {
 
 void makeMeasures(Record& r) {
   r.date = ds3232.get();
+  
+  r.tempDS3232 = ds3232.temperature() / 4.0;
 
   float m = analogRead(A0);
   float mbar = (m - 37) / 0.9;
@@ -111,7 +113,6 @@ void makeMeasures(Record& r) {
   r.lumi = analogRead(A3);
 } 
 
-// r.temperature = ds3232.temperature() / 4.0;
 
 
 //*****************************************************************
@@ -140,6 +141,8 @@ void printMeasureOnSerial(Record& r) {
   Serial.println(r.mass, floatPrecision);  
   Serial.print(F("Temp: "));
   Serial.println(r.temp, floatPrecision);  
+  Serial.print(F("TempDS3232: "));
+  Serial.println(r.tempDS3232, floatPrecision);  
   Serial.print(F("Alim: "));
   Serial.println(r.alim, floatPrecision);  
   Serial.print(F("Lumi: "));
@@ -218,6 +221,8 @@ void writeRecordToFile(File file, Record r) {
   file.print(r.mass, floatPrecision);
   file.print("\t");
   file.print(r.temp, floatPrecision);
+  file.print("\t");
+  file.print(r.tempDS3232, floatPrecision);
   file.print("\t");
   file.print(r.alim, floatPrecision);
   file.print("\t");

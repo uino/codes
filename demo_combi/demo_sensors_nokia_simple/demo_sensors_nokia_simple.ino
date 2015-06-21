@@ -13,11 +13,11 @@
 
 #include <SPI.h>
 #include <Wire.h>
-#include <SHT1x.h>
+// #include <SHT1x.h>
+#include <SD.h>
 #include <Time.h>
 #include <AC_Nokia5110.h>
 #include <DS3232RTC.h> 
-#include <AC_Button.h>
 #include <avr/pgmspace.h>
 #include "defs.h"
 
@@ -25,39 +25,51 @@
 //*****************************************************************
 /* Configuration */
 
+// Log file parameters
+const boolean resetLogOnSetup = false;
+const boolean showSDContent = true;
+char filename[] = "logger.txt"; // name of log file (8+3 characters max)
+
+// SD card : for writing log file
+const int SDselectPin = 10;
+const int SDhardwareCSPin = 10;
 
 // AC_Nokia5110 pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin
-// AC_Nokia5110 screen(3, 4, 5, 11, 13, 9);
-AC_Nokia5110 screen(3, 4, 5, 11, 13, 8);
+// AC_Nokia5110 screen(3, 4, 5, 11, 13, 8);
+AC_Nokia5110 screen(8, 7, 6, 11, 13, 0);
+boolean needRefresh = true;
+
 
 // ds3232 : for measuring clock and temperature
 DS3232RTC ds3232;
 
-// AC_Button pins: buttonPin
-AC_Button button(2);
-
 // SHT1x pins: dataPin, clockPin
-SHT1x sht1x(9, 10);
-
-// Menu panels
-const int nbPanels = 1;
-int currentPannel = 0;
-boolean needRefresh = true;
+// SHT1x sht1x(9, 10);
 
 // Current measure
-const int measurePeriod = 2000; // milliseconds
+const int measurePeriod = 3000; // milliseconds
 long dateLastMeasure = 0;
+bool lastMeasureWriteSuccessful = true;
 Record currentMeasure;   //includ def.h
 
 
 //*****************************************************************
 /* Measure */
 
+
+void makeMeasures(Record& r) {
+  r.date = ds3232.get();
+  r.temperature = ds3232.temperature() / 4.0;
+  r.humidity = 218.3;
+} 
+
+/* original:
 void makeMeasures(Record& r) {
   r.date = ds3232.get(); 
   r.temperature = sht1x.readTemperatureC();
   r.humidity = sht1x.readHumidity();
 }
+*/
 
 
 //*****************************************************************
@@ -86,6 +98,86 @@ void printMeasureOnSerial(Record& r) {
   Serial.print(F("Humidity: "));
   Serial.println(r.humidity, 2);  
   Serial.println(F("---------------------------"));
+}
+
+
+
+//*****************************************************************
+/* SD functions */
+
+void readFileSerialPrint() { // TODO: move to library
+  if (SD.exists(filename)) {
+    File file = SD.open(filename, FILE_READ);
+    if (! file) {
+      Serial.println(F("readFileSerialPrint: error opening file"));
+    } else {
+      Serial.println(F("=========begin contents========="));
+      while (file.available()) {
+        byte v = file.read();
+        Serial.write(v);
+      }
+      Serial.println(F("=========end contents========="));
+      file.close();
+    }
+  } else {
+    Serial.println(F("readFileSerialPrint: file not found"));
+  }
+}
+
+void writeTime(File file, time_t t) {
+  file.print(year(t)); 
+  file.print('/');  
+  file.print(month(t));
+  file.print('/');
+  file.print(day(t));
+  file.print('\t');
+  file.print(hour(t));
+  file.print(':');
+  file.print(minute(t));
+  file.print(':');
+  file.print(second(t));
+}
+
+File openLog(byte mode) {
+  File file = SD.open(filename, mode);
+  if (! file) {
+    Serial.println(F("Error opening file"));
+  }
+  return file;
+}
+
+void writeLogHeader() {
+  File file = openLog(FILE_WRITE);
+  if (! file)
+    return;
+  file.print(F("#date\ttime\tunixtime\ttemperature\thumidity\t"));
+  file.println("");
+  file.close();
+}
+
+void resetLog() {
+  SD.remove(filename);
+  writeLogHeader();
+}
+
+void writeRecordToFile(File file, Record r) {
+  int floatPrecision = 2;
+  writeTime(file, r.date);
+  file.print("\t");
+  file.print(r.date);
+  file.print("\t");
+  file.print(r.temperature, floatPrecision);
+  file.print("\t");
+  file.print(r.humidity, floatPrecision);
+  file.println("");
+}
+
+void writeRecordToLog(Record r) {
+  File file = openLog(FILE_WRITE);
+  if (! file)
+    return;
+  writeRecordToFile(file, r);
+  file.close();
 }
 
 
@@ -134,7 +226,7 @@ void string_of_float(float value, int nbChars, int precision, char* target) {
   dtostrf(value, nbChars, precision, target); 
 }
 
-void displayMeasures1(Record r) {
+void displayMeasures(Record r) {
   char buffer[bufferRowLength];
   int floatNbChars = 5;
   int floatPrecision = 2;
@@ -157,6 +249,16 @@ void displayMeasures1(Record r) {
   string_of_float(r.humidity, floatNbChars, floatPrecision, buffer);
   screen.setString(buffer, line, 9);
 
+  // success of last write
+  line++;
+  screen.setString("Save.:", line, 0);
+  if (lastMeasureWriteSuccessful) {
+    screen.setString("ok", line, 9);
+  } else {
+    screen.setString("fail", line, 9);
+  }
+
+  // finish
   screen.updateDisplay(); 
 }
 
@@ -164,17 +266,10 @@ void displayMeasures1(Record r) {
 //*****************************************************************
 /* Menu */
 
-void shortClick() {
-  currentPannel = (currentPannel + 1) % nbPanels;
-  needRefresh = true;
-}
-
 void displayPanel() {
   if (! needRefresh)
     return;
-  if (currentPannel == 0) {
-    displayMeasures1(currentMeasure);
-  } // else .. // to handle more panels
+  displayMeasures(currentMeasure);
   needRefresh = false;
 }
 
@@ -205,19 +300,25 @@ void setup()
   screen.setContrast(60); 
 
   // DS3232 set initial time
-  initializeTime();
+  // DEACTIVATED:  initializeTime();
 
   // Time.h library (adjust from ds3232 every 300 seconds)
   setSyncProvider(ds3232.get); 
   setSyncInterval(300); 
 
-  // Button
-  button.begin();
-  button.onUp(shortClick);
+  // SD
+  pinMode(SDhardwareCSPin, OUTPUT); 
+  if (! SD.begin(SDselectPin)) {
+    Serial.println("Card failed or missing");
+  }
+
+  // Reset
+  if (resetLogOnSetup) {
+    resetLog();
+  }
 
   Serial.print("Starting"); 
 }
-
 
 
 //*****************************************************************
@@ -229,14 +330,16 @@ void loop()
   if (now - dateLastMeasure > measurePeriod) {
     dateLastMeasure = now;
     makeMeasures(currentMeasure);
-    printMeasureOnSerial(currentMeasure);
+    if (SD.begin(SDselectPin)) {
+      printMeasureOnSerial(currentMeasure);
+      lastMeasureWriteSuccessful = true;
+    } else {
+      Serial.println("Card failed or missing");
+      lastMeasureWriteSuccessful = false;
+    }
     needRefresh = true;
   }
 
-  // periodic actions
-  button.poll();
   displayPanel();
   delay(50);
 }
-
-

@@ -191,7 +191,6 @@ void setup()
   pinMode(SDhardwareCSPin, OUTPUT); 
   if (! SD.begin(SDselectPin)) {
     Serial.println("Card failed or missing");
-    while(1);
   }
 
   // Reset
@@ -212,7 +211,11 @@ void loop()
   if (dateLastMeasure - now > measurePeriod) {
     dateLastMeasure = now;
     makeMeasures(currentMeasure);
-    writeRecordToLog(currentMeasure);
+    if (SD.begin(SDselectPin)) {
+      writeRecordToLog(currentMeasure);
+    } else {
+      Serial.println("Card failed or missing");
+    }
     if (showSDContent) {
       readFileSerialPrint();
     }

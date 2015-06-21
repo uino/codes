@@ -1,11 +1,19 @@
 /**
- * Demo for the SHT1x with Nokia screen.
+ * Demo for loggin on SD card, with display on Nokia screen.
  * Code by Arthur Chargueraud.
  * This code is in the public domain.
  *
+ * Important: to support hot swapping of the SD card, you need to 
+ * patch the file "libraries/SD.cpp" from your distribution,
+ * by adding the line:
+ *    if (root.isOpen()) root.close(); // allows repeated calls 
+ * immediately after the line:
+ *    boolean SDClass::begin(uint8_t csPin) {
  *
- * Show in real time the state of a SHT1x sensor on
+ *
+ * Show in real time the state of a sensor on
  * a Nokia5110 display. 
+ * (In comments in the code: code to obtain data from SHT1x device)
  *
  * A button can used to go from a panel to the next.
  *
@@ -18,6 +26,7 @@
 #include <Time.h>
 #include <AC_Nokia5110.h>
 #include <DS3232RTC.h> 
+#include <AC_RAM.h>
 #include <avr/pgmspace.h>
 #include "defs.h"
 
@@ -50,8 +59,16 @@ DS3232RTC ds3232;
 const int measurePeriod = 3000; // milliseconds
 long dateLastMeasure = 0;
 bool lastMeasureWriteSuccessful = true;
-Record currentMeasure;   //includ def.h
+Record currentMeasure;   //include def.h
 
+
+//*****************************************************************
+/* Report */
+
+void report() {
+  Serial.print("SRAM free: ");
+  Serial.println(AC_RAM::getFree());
+}
 
 //*****************************************************************
 /* Measure */
@@ -60,10 +77,11 @@ Record currentMeasure;   //includ def.h
 void makeMeasures(Record& r) {
   r.date = ds3232.get();
   r.temperature = ds3232.temperature() / 4.0;
-  r.humidity = 218.3;
+  r.humidity = 218.3;  // dummy value
 } 
 
 /* original:
+
 void makeMeasures(Record& r) {
   r.date = ds3232.get(); 
   r.temperature = sht1x.readTemperatureC();
@@ -161,6 +179,7 @@ void resetLog() {
 }
 
 void writeRecordToFile(File file, Record r) {
+  Serial.println("Call to writeRecordToFile");
   int floatPrecision = 2;
   writeTime(file, r.date);
   file.print("\t");
@@ -317,7 +336,7 @@ void setup()
     resetLog();
   }
 
-  Serial.print("Starting"); 
+  Serial.println("Starting"); 
 }
 
 
@@ -338,6 +357,10 @@ void loop()
       lastMeasureWriteSuccessful = false;
     }
     needRefresh = true;
+    if (showSDContent) {
+      readFileSerialPrint();
+    }
+    report();
   }
 
   displayPanel();

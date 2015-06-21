@@ -28,7 +28,7 @@
 #include <Time.h>
 #include <AC_Nokia5110_light.h>
 #include <DS3232RTC.h> 
-#include <AC_RAM.h>
+// #include <AC_RAM.h>
 #include <avr/pgmspace.h>
 #include "defs.h"
 #include <AC_Sleep.h>
@@ -43,8 +43,8 @@ const byte pinAlimClock = 4;
 const byte pinAlimSPI = 9;
 
 // Log file parameters
-const boolean resetLogOnSetup = false;
-const boolean showSDContent = true;
+// const boolean resetLogOnSetup = false;
+const boolean showSDContent = false;
 char filename[] = "logger.txt"; // name of log file (8+3 characters max)
 
 // SD card : for writing log file
@@ -64,7 +64,7 @@ const byte idInterrupt = 0; // corresponds to pinInterrupt
 const byte pinInterrupt = 2; 
 
 // alarm
-const int periodWakeUp = 5; // seconds
+const int periodWakeUp = 15 * 60; // seconds
 boolean isSleeping = false;
 long dateLastAlarm = 0;
 
@@ -72,38 +72,46 @@ long dateLastAlarm = 0;
 // SHT1x sht1x(9, 10);
 
 // Current measure
-const int measurePeriod = 3000; // milliseconds
 bool lastMeasureWriteSuccessful = true;
 long lastMeasureWriteSize = 0;
 Record currentMeasure;   //include def.h
 
 
 //*****************************************************************
-/* Report */
+/* Report
 
 void report() {
   Serial.print(F("SRAM free: "));
   Serial.println(AC_RAM::getFree());
 }
 
+*/
+
 //*****************************************************************
 /* Measure */
 
-
 void makeMeasures(Record& r) {
   r.date = ds3232.get();
-  r.temperature = ds3232.temperature() / 4.0;
-  r.humidity = 218.3;  // dummy value
+
+  float m = analogRead(A0);
+  float mbar = (m - 37) / 0.9;
+  r.mass = mbar * 1.9 * 2 / 3 / 10;
+  
+  float v = analogRead(A1);
+  v = v*5/1023;
+  float Rctn = (10000*v)/(5-v);
+  float x = log(Rctn/22000);
+  float T = (4220*298.15)/(298.15*x+4220);
+  r.temp = T - 273.15;
+ 
+  float w = analogRead(A2);
+  float b = -9.96*w+9373 +abs(1000*(w-620))/500+abs(1000*(w-500))/500;
+  r.alim = (float)b/1000-0.04;
+     
+  r.lumi = analogRead(A3);
 } 
 
-/* original:
-
-void makeMeasures(Record& r) {
-  r.date = ds3232.get(); 
-  r.temperature = sht1x.readTemperatureC();
-  r.humidity = sht1x.readHumidity();
-}
-*/
+// r.temperature = ds3232.temperature() / 4.0;
 
 
 //*****************************************************************
@@ -125,15 +133,19 @@ void printTime(time_t t) {
 }
 
 void printMeasureOnSerial(Record& r) {
+  int floatPrecision = 4;
   Serial.println(F("---------------------------"));
   printTime(r.date);
-  Serial.print(F("Temperature: "));
-  Serial.println(r.temperature, 2);  
-  Serial.print(F("Humidity: "));
-  Serial.println(r.humidity, 2);  
+  Serial.print(F("Mass: "));
+  Serial.println(r.mass, floatPrecision);  
+  Serial.print(F("Temp: "));
+  Serial.println(r.temp, floatPrecision);  
+  Serial.print(F("Alim: "));
+  Serial.println(r.alim, floatPrecision);  
+  Serial.print(F("Lumi: "));
+  Serial.println(r.lumi, floatPrecision);  
   Serial.println(F("---------------------------"));
 }
-
 
 
 //*****************************************************************
@@ -180,6 +192,8 @@ File openLog(byte mode) {
   return file;
 }
 
+/* Currently not used
+
 void writeLogHeader() {
   File file = openLog(FILE_WRITE);
   if (! file)
@@ -193,19 +207,24 @@ void resetLog() {
   SD.remove(filename);
   writeLogHeader();
 }
+*/
 
 void writeRecordToFile(File file, Record r) {
-  Serial.println(F("Call to writeRecordToFile"));
-  int floatPrecision = 2;
+  int floatPrecision = 4;
   writeTime(file, r.date);
   file.print("\t");
   file.print(r.date);
   file.print("\t");
-  file.print(r.temperature, floatPrecision);
+  file.print(r.mass, floatPrecision);
   file.print("\t");
-  file.print(r.humidity, floatPrecision);
+  file.print(r.temp, floatPrecision);
+  file.print("\t");
+  file.print(r.alim, floatPrecision);
+  file.print("\t");
+  file.print(r.lumi, floatPrecision);
   file.println("");
 }
+
 
 void writeRecordToLog(Record r) {
   File file = openLog(FILE_WRITE);
@@ -269,46 +288,50 @@ void string_of_float(float value, int nbChars, int precision, char* target) {
 
 void displayMeasures(Record r) {
   char buffer[bufferRowLength];
-  int floatNbChars = 5;
+  int floatNbChars = 7;
   int floatPrecision = 2;
   int line = 0;
+  int colValue = 6;
   screen.clearDisplay(); 
+
+  // mass
+  screen.setString("Mass:", line, 0);
+  string_of_float(r.mass, floatNbChars, floatPrecision, buffer);
+  screen.setString(buffer, line, colValue);
+  line++;
+
+  // temp
+  screen.setString("Temp:", line, 0);
+  string_of_float(r.temp, floatNbChars, floatPrecision, buffer);
+  screen.setString(buffer, line, colValue);
+  line++;
+
+  // alim
+  screen.setString("Alim:", line, 0);
+  string_of_float(r.alim, floatNbChars, floatPrecision, buffer);
+  screen.setString(buffer, line, colValue);
+  line++;
+
+  // lumi
+  screen.setString("Lumi:", line, 0);
+  string_of_float(r.lumi, floatNbChars, floatPrecision, buffer);
+  screen.setString(buffer, line, colValue);
+  line++;
 
   // date
   timeIntoString(r.date, buffer, false);
   screen.setString(buffer, line, 0);
-
-  // temperature
   line++;
-  screen.setString("Temp.:", line, 0);
-  string_of_float(r.temperature, floatNbChars, floatPrecision, buffer);
-  screen.setString(buffer, line, 9);
 
-  // humidity
-  line++;
-  screen.setString("Humi.:", line, 0);
-  string_of_float(r.humidity, floatNbChars, floatPrecision, buffer);
-  screen.setString(buffer, line, 9);
-
-  // success of last write
-  line++;
-  screen.setString("Save.:", line, 0);
+  // success of last write and file size
   if (lastMeasureWriteSuccessful) {
-    screen.setString("ok", line, 9);
+    screen.setString("ok", line, 0);
   } else {
-    screen.setString("fail", line, 9);
+    screen.setString("pb", line, 0);
   }
-
-  // success of last write
+  string_of_float((float) lastMeasureWriteSize, 11, 0, buffer);
+  screen.setString(buffer, line, 3);
   line++;
-  if (lastMeasureWriteSize < 10000) {
-    screen.setString("Size :", line, 0);
-    string_of_float((float) lastMeasureWriteSize, floatNbChars, 0, buffer);
-  } else {
-    screen.setString("SizeM:", line, 0);
-    string_of_float((float) lastMeasureWriteSize/1000, floatNbChars, 0, buffer);
-  }
-  screen.setString(buffer, line, 9);
 
   // finish
   screen.updateDisplay(); 
@@ -352,12 +375,15 @@ void initializeTime() {
 
 void alimOn() {
   pinMode(pinAlimClock, OUTPUT);
-  digitalWrite(pinAlimClock, HIGH);
   pinMode(pinAlimSPI, OUTPUT);
+  digitalWrite(pinAlimClock, HIGH);
   digitalWrite(pinAlimSPI, HIGH);
+  delay(50);
 }
 
 void alimOff() {
+  pinMode(pinAlimClock, INPUT);
+  pinMode(pinAlimSPI, INPUT);
   digitalWrite(pinAlimClock, LOW);
   digitalWrite(pinAlimSPI, LOW);
 }
@@ -388,10 +414,10 @@ void setup()
     Serial.println(F("Card failed or missing"));
   }
 
-  // Reset
+  /* Reset
   if (resetLogOnSetup) {
     resetLog();
-  }
+  }*/
 
   Serial.println(F("Starting")); 
 
@@ -411,16 +437,16 @@ void loop()
 {
   if (isSleeping) {
     isSleeping = false;
-    Serial.println("Exit sleep");
+    Serial.println(F("Exit sleep"));
     alimOn();
   }
 
   // for debugging only:
   printTime(ds3232.get());
-  report();
   nbAlarmCycles++;
-  Serial.print("Nb alarm cycles: ");
+  Serial.print(F("Nb alarm cycles: "));
   Serial.println(nbAlarmCycles);
+    // report();
 
   // perform measures
   makeMeasures(currentMeasure);
@@ -444,7 +470,7 @@ void loop()
   delay(delayScreenRead);
 
   // Go back to sleep
-  Serial.println("Enter sleep");
+  Serial.println(F("Enter sleep"));
   delay(100);
 
   ds3232.alarm1(); // reset alarm

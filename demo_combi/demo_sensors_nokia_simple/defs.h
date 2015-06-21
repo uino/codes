@@ -1,6 +1,8 @@
 
 typedef struct {
   long date;
-  float temperature;
-  float humidity;
+  float mass;
+  float temp;
+  float alim;
+  float lumi;
 } Record;

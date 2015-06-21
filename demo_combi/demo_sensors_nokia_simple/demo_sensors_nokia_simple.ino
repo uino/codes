@@ -24,7 +24,7 @@
 // #include <SHT1x.h>
 #include <SD.h>
 #include <Time.h>
-#include <AC_Nokia5110.h>
+#include <AC_Nokia5110_light.h>
 #include <DS3232RTC.h> 
 #include <AC_RAM.h>
 #include <avr/pgmspace.h>
@@ -45,7 +45,7 @@ const int SDhardwareCSPin = 10;
 
 // AC_Nokia5110 pins: scePin, rstPin, dcPin, sdinPin, sclkPin, blPin
 // AC_Nokia5110 screen(3, 4, 5, 11, 13, 8);
-AC_Nokia5110 screen(8, 7, 6, 11, 13, 0);
+AC_Nokia5110_light screen(8, 7, 6, 11, 13, 0);
 boolean needRefresh = true;
 
 
@@ -59,6 +59,7 @@ DS3232RTC ds3232;
 const int measurePeriod = 3000; // milliseconds
 long dateLastMeasure = 0;
 bool lastMeasureWriteSuccessful = true;
+long lastMeasureWriteSize = 0;
 Record currentMeasure;   //include def.h
 
 
@@ -66,7 +67,7 @@ Record currentMeasure;   //include def.h
 /* Report */
 
 void report() {
-  Serial.print("SRAM free: ");
+  Serial.print(F("SRAM free: "));
   Serial.println(AC_RAM::getFree());
 }
 
@@ -179,7 +180,7 @@ void resetLog() {
 }
 
 void writeRecordToFile(File file, Record r) {
-  Serial.println("Call to writeRecordToFile");
+  Serial.println(F("Call to writeRecordToFile"));
   int floatPrecision = 2;
   writeTime(file, r.date);
   file.print("\t");
@@ -196,6 +197,7 @@ void writeRecordToLog(Record r) {
   if (! file)
     return;
   writeRecordToFile(file, r);
+  lastMeasureWriteSize = file.size();
   file.close();
 }
 
@@ -211,8 +213,8 @@ const int bufferRowLength = 30; // = screenNbCols+1 (but using more characters f
 
 // prints a two-digit nonnegative int into a given target string (of length >= 2)
 void timeItemIntoString(int v, char* str) {
-  str[0] = '0' + v / 10;
-  str[1] = '0' + v % 10;
+  str[0] = '0' + (v / 10);
+  str[1] = '0' + (v % 10);
 }
 
 // prints the date into a given target string
@@ -220,22 +222,27 @@ void timeItemIntoString(int v, char* str) {
 void timeIntoString(time_t t, char* str, boolean showYear) {
   char* pos = str;
   if (showYear) {
-    timeItemIntoString(year(t), pos);
+    timeItemIntoString(year(t) % 100, pos);
+    pos += 2;
     *pos = '/';
-    pos += 3;
+    pos++;
   }
   timeItemIntoString(month(t), pos);
+  pos += 2;
   *pos = '/';
-  pos += 3;
+  pos++;
   timeItemIntoString(day(t), pos);
+  pos += 2;
   *pos = ' ';
-  pos += 3;
+  pos++;
   timeItemIntoString(hour(t), pos);
+  pos += 2;
   *pos = ':';
-  pos += 3;
+  pos++;
   timeItemIntoString(minute(t), pos);
+  pos += 2;
   *pos = ':';
-  pos += 3;
+  pos++;
   timeItemIntoString(second(t), pos);
   pos += 2;
   *pos = '\0';
@@ -276,6 +283,13 @@ void displayMeasures(Record r) {
   } else {
     screen.setString("fail", line, 9);
   }
+
+  // success of last write
+  line++;
+  screen.setString("Size :", line, 0);
+  screen.setString("Temp.:", line, 0);
+  string_of_float((float) lastMeasureWriteSize, floatNbChars, 0, buffer);
+  screen.setString(buffer, line, 9);
 
   // finish
   screen.updateDisplay(); 
@@ -328,7 +342,7 @@ void setup()
   // SD
   pinMode(SDhardwareCSPin, OUTPUT); 
   if (! SD.begin(SDselectPin)) {
-    Serial.println("Card failed or missing");
+    Serial.println(F("Card failed or missing"));
   }
 
   // Reset
@@ -336,7 +350,7 @@ void setup()
     resetLog();
   }
 
-  Serial.println("Starting"); 
+  Serial.println(F("Starting")); 
 }
 
 
@@ -351,9 +365,10 @@ void loop()
     makeMeasures(currentMeasure);
     if (SD.begin(SDselectPin)) {
       printMeasureOnSerial(currentMeasure);
+      writeRecordToLog(currentMeasure);
       lastMeasureWriteSuccessful = true;
     } else {
-      Serial.println("Card failed or missing");
+      Serial.println(F("Card failed or missing"));
       lastMeasureWriteSuccessful = false;
     }
     needRefresh = true;

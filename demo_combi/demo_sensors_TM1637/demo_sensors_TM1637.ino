@@ -147,6 +147,7 @@ void setup()
 
   // display
   display.begin();
+  display.setDigits(0,0,0,0);
 
   // button
   button.begin();

@@ -1,5 +1,3 @@
-#include <SPI.h>
-
 /* 
  * Arthur Chargueraud
  * This code is in the public domain.
@@ -7,6 +5,7 @@
  * Demo associated with library "AC_Nokia5110_light".
  */
 
+#include <SPI.h>
 #include <AC_Nokia5110_light.h>
 
 // Nokia5110 : for display
@@ -42,4 +41,5 @@ void loop()
   // do nothing
   delay(1000);
 }
+
 

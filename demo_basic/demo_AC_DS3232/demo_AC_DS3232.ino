@@ -28,8 +28,6 @@ void printTime(time_t t) {
 }
 
 void setup() {
-  pinMode(7, OUTPUT); digitalWrite(7, HIGH);  // TEMP: power the ds3232
-
   Serial.begin(9600);   
   Serial.println("Starting up");
 

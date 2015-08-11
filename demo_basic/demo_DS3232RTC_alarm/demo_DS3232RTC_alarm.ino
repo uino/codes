@@ -20,7 +20,7 @@ const int example = 0;
 // const int example = 1;
 // const int example = 2;
 
-void initializeAlarm()
+void initializeAlarm() {
   if (example == 0) { 
     // alarm every seconds
     ds3232.setAlarm(ALM1_EVERY_SECOND, 0, 0, 0, 0);  
@@ -60,11 +60,6 @@ void printTime(time_t t) {
 
 void setup()
 {
-// DS3232 (alimentation)
-const int pinDS3232vcc = 7;
-pinMode(pinDS3232vcc, OUTPUT);
-digitalWrite(pinDS3232vcc, HIGH);
-
   Serial.begin(9600);   
   Serial.println("Starting up");
   initializeAlarm();

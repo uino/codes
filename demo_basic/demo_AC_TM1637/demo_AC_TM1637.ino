@@ -17,9 +17,6 @@
 
 #include <AC_TM1637.h>
 
-// comment out line below if no pin is used to control the power
-#define POWER_CONTROL 13
-
 const int pinCLK = 11;
 const int pinDIO = 12;
 
@@ -32,11 +29,6 @@ void setup()
 {
   Serial.begin(9600);   
   Serial.println("Starting up");
-
-#ifdef POWER_CONTROL
-  pinMode(POWER_CONTROL, OUTPUT);
-  digitalWrite(POWER_CONTROL, HIGH);
-#endif 
 
   display.begin();
 

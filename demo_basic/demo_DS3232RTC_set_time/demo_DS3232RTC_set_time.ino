@@ -45,8 +45,6 @@ void setup()
   Serial.begin(9600);   
   Serial.println("Starting up");
 
-  pinMode(7, OUTPUT); digitalWrite(7, HIGH); // TEMP to power the ds3232    
-
   time_t targetTime = CURRENT_TIME + timeZoneShift*3600 + delayOfCompilationAndUpload;
   ds3232.set(targetTime);
   Serial.println("Time initialized");

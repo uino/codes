@@ -33,5 +33,5 @@ void loop(void)
 {
   Serial.print("DS3232 time: ");
   printTime(ds3232.get());
-  delay(2000);
+  delay(1000);
 }

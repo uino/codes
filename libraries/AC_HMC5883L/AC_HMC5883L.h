@@ -25,7 +25,12 @@
  *
  *          WARNING: experimental implementation, absolute values might
  *                   be completely wrong (however, heading should work).
- * 
+ *
+ *
+ * Pins: (connection I2C protocol at address 0x1E)
+ * - SDA : A4
+ * - SCL : A5 
+ * - DRDY pin (data ready interrupt) is not used. 
  */
 
 #ifndef AC_HMC5883L_h

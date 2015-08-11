@@ -18,7 +18,9 @@ int potentiometerPin = A0;
 
 void setup() {
   pinMode(potentiometerPin, INPUT);
-  Serial.begin(9600);
+
+  Serial.begin(9600);   
+  Serial.println("Starting up");
 }
 
 void loop() {

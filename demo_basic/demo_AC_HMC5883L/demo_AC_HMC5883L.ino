@@ -13,9 +13,6 @@
  *
  */
 
-// comment out the line below if no power-control pin is used.
-#define POWER_CONTROL_PIN 3
-
 #include <AC_HMC5883L.h>
 
 AC_HMC5883L::GainMode gain = AC_HMC5883L::GAIN_0_8; // use for north-pointing compass
@@ -26,12 +23,6 @@ void setup()
 {
   Serial.begin(9600);   
   Serial.println("Starting up");
-
-#ifdef POWER_CONTROL_PIN
-    pinMode(POWER_CONTROL_PIN, OUTPUT);
-    digitalWrite(POWER_CONTROL_PIN, HIGH);
-    delay(50);
-#endif
 
   magneto.begin(); 
 }
@@ -49,3 +40,6 @@ void loop()
   Serial.println("");
   delay(200);
 }
+
+
+

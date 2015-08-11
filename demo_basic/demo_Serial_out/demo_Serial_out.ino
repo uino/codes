@@ -1,4 +1,4 @@
-#include <Arduino>
+#include <Arduino.h>
 
 /*
  * Demo for printing values to the serial port.
@@ -8,7 +8,7 @@
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("Start up x");
+  Serial.println("Start up");
 }
 
 int counter = 0;

@@ -17,8 +17,10 @@
 
 #include <AC_TM1637.h>
 
-const int pinCLK = 11;
-const int pinDIO = 12;
+// const int pinCLK = 11;
+// const int pinDIO = 12;
+const int pinCLK = 6;
+const int pinDIO = 5;
 
 AC_TM1637 display(pinCLK, pinDIO);
 

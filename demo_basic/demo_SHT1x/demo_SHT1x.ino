@@ -13,8 +13,8 @@
 #include <SHT1x.h>
 
 // Specify data and clock connections and instantiate SHT1x object
-const int dataPin = 10;
-const int clockPin = 11;
+const int dataPin = 9;
+const int clockPin = 10;
 SHT1x sht1x(dataPin, clockPin);
 
 void setup()
@@ -43,7 +43,7 @@ void loop()
   Serial.print(humidity);
   Serial.println("%");
 
-  delay(1000);
+  delay(500);
 }
 
 

@@ -45,7 +45,7 @@ void AC_TM1637::begin() {
 	// Set the pin direction and default value.
 	// Both pins are set as inputs, allowing the pull-up resistors to pull them up
   pinMode(pinCLK, INPUT);
-  pinMode(pinDIO,INPUT);
+  pinMode(pinDIO, INPUT);
 	digitalWrite(pinCLK, LOW);
 	digitalWrite(pinDIO, LOW);
 }
@@ -114,6 +114,12 @@ void AC_TM1637::segmentsForInvalid(byte* segments) {
   }
 }
 
+void AC_TM1637::showInvalid() {
+  byte segments[4];
+  segmentsForInvalid(segments);
+  setSegments(segments);
+}
+
 void AC_TM1637::segmentsForInt(int value, boolean leadingZero, byte* segments) {
   if (value < -999 || value > 9999) {
     segmentsForInvalid(segments);
@@ -153,7 +159,7 @@ void AC_TM1637::showInt(int value, boolean leadingZero) {
 void AC_TM1637::showFloat(float value, int precision, boolean leadingZero) {
   byte segments[4];
   if (precision < 0 || precision > 3) {
-    segmentsForInvalid(segments);
+    showInvalid();
     return;
   }
   for (int i = 0; i < precision; i++) {
@@ -168,7 +174,7 @@ void AC_TM1637::showFloat(float value, int precision, boolean leadingZero) {
 void AC_TM1637::showTime(int hours, int minutes) {
   byte segs[4];
   if (hours < 0 || hours >= 99 || minutes < 0 || minutes >= 99) {
-    segmentsForInvalid(segs);
+    showInvalid();
     return;
   }
   segs[3] = segmentOfDigit(minutes % 10);

@@ -97,6 +97,12 @@ public:
   void showTime(int hours, int minutes);
 
   /** 
+    * Display "----" on the screen, to indicate invalid display request.
+    *
+    */
+  void showInvalid();
+
+  /** 
     * Given a digit value 0-15,
     * return the segments associated with it.
     * Values in the range 10-15 are displayed as letters.

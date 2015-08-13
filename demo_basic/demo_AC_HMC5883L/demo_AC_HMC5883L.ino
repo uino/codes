@@ -11,6 +11,11 @@
  * The demo_HMC5883L_calibrate contains code for calibration
  * and use as a compass.
  *
+ * Wiring:
+ * - GND
+ * - VCC +5V
+ * - SCL : pin A5
+ * - SDA : pin A4
  */
 
 #include <AC_HMC5883L.h>

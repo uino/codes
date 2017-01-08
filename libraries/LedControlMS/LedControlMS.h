@@ -1,3 +1,11 @@
+
+/*
+ * ==> AC extension
+ * Minor extensions by Arthur Charguéraud
+ * - setMatrix
+ */ 
+
+
 /*
  *    LedControl.h - A library for controling Leds with a MAX7219/MAX7221
  *    Copyright (c) 2007 Eberhard Fahle
@@ -184,6 +192,17 @@ class LedControl {
      *		if false it is switched off
      */
     void setLed(int addr, int row, int col, boolean state);
+
+    /* 
+     * Set all 64 Led's to a new state,
+     * giving an array of 8 byte values describing the rows.
+     * Params:
+     * addr	address of the display
+     * value	8 byte, with each bit set to 1 will light up the
+     *		corresponding Led.
+     * ==> AC extension
+     */
+    void setMatrix(int addr, byte value[8]);
 
     /* 
      * Set all 8 Led's in a row to a new state

@@ -157,6 +157,14 @@ void LedControl::setColumn(int addr, int col, byte value) {
     }
 }
 
+/*==>  AC extension
+*/
+void LedControl::setMatrix(int addr, byte value[8]) {
+  for (int row = 0; row < 8; row++) {
+    setRow(addr, row, value[row]);
+  }
+}
+
 void LedControl::setDigit(int addr, int digit, byte value, boolean dp) {
     int offset;
     byte v;

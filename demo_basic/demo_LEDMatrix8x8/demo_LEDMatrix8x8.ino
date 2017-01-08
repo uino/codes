@@ -4,11 +4,18 @@ http://www.instructables.com/id/LED-Matrix-with-Arduino/
 https://www.youtube.com/watch?v=dzadMdmXYx0
 http://playground.arduino.cc/Main/LEDMatrix
 
-
+ // LedControl(int dataPin, int clkPin, int csPin, int numDevices=1);
+LedControl lc=LedControl(11,13,9,1);
+ 
+ Wiring:
+ - CS = 9
+ - CLK = 13
+ - DIN = 11
 
 
 */
 
+#include <AC_RAM.h>
 
 
 //We always have to include the library
@@ -23,12 +30,19 @@ http://playground.arduino.cc/Main/LEDMatrix
  We have only a single MAX72XX.
  */
  // LedControl(int dataPin, int clkPin, int csPin, int numDevices=1);
-LedControl lc=LedControl(11,13,9,1);
+LedControl lc=LedControl(11, 13, 9, 1);
 
 /* we always wait a bit between updates of the display */
 unsigned long delaytime=100;
+unsigned long delayshorttime=20;
 
 void setup() {
+
+  Serial.begin(9600); 
+  Serial.print(F("SRAM free: "));
+  Serial.println(AC_RAM::getFree());
+
+
   /*
    The MAX72XX is in power-saving mode on startup,
    we have to do a wakeup call
@@ -114,14 +128,14 @@ void writeArduinoOnMatrix() {
  */
 void rows() {
   for(int row=0;row<8;row++) {
-    delay(delaytime);
+    delay(delayshorttime);
     lc.setRow(0,row,B10100000);
-    delay(delaytime);
+    delay(delayshorttime);
     lc.setRow(0,row,(byte)0);
     for(int i=0;i<row;i++) {
-      delay(delaytime);
+      delay(delayshorttime);
       lc.setRow(0,row,B10100000);
-      delay(delaytime);
+      delay(delayshorttime);
       lc.setRow(0,row,(byte)0);
     }
   }
@@ -135,14 +149,14 @@ void rows() {
  */
 void columns() {
   for(int col=0;col<8;col++) {
-    delay(delaytime);
+    delay(delayshorttime);
     lc.setColumn(0,col,B10100000);
-    delay(delaytime);
+    delay(delayshorttime);
     lc.setColumn(0,col,(byte)0);
     for(int i=0;i<col;i++) {
-      delay(delaytime);
+      delay(delayshorttime);
       lc.setColumn(0,col,B10100000);
-      delay(delaytime);
+      delay(delayshorttime);
       lc.setColumn(0,col,(byte)0);
     }
   }
@@ -156,20 +170,45 @@ void columns() {
 void single() {
   for(int row=0;row<8;row++) {
     for(int col=0;col<8;col++) {
-      delay(delaytime);
+      delay(delayshorttime);
       lc.setLed(0,row,col,true);
-      delay(delaytime);
+      delay(delayshorttime);
       for(int i=0;i<col;i++) {
         lc.setLed(0,row,col,false);
-        delay(delaytime);
+        delay(delayshorttime);
         lc.setLed(0,row,col,true);
-        delay(delaytime);
+        delay(delayshorttime);
       }
     }
   }
 }
 
 void loop() { 
+
+  // display one matrix
+  byte fig1[8] = { B00000000,B00001000,B00000100,B11111110,B11111110,B00000100,B00001000,B00000000 };
+  lc.setMatrix(0, fig1);
+  delay(5000);
+
+  // display one matrix
+  byte fig2[8] = { B00000000,B00011000,B00111100,B01011010,B00011000,B00011000,B00011000,B00011000 };
+  lc.setMatrix(0, fig2);
+  delay(5000);
+
+  // display one letter
+  // lc.displayChar(0, lc.getCharArrayPosition('a'));
+  // delay(1000);
+
+  // display letter after letter
+  char text[] = "hello";
+  int pos = 0;
+  while (text[pos] != '\0') {
+    char t[] = "a";
+    t[0] = text[pos];
+    lc.writeString(0, t);
+    delay(300);
+    pos++;
+  }
   writeArduinoOnMatrix();
   rows();
   columns();

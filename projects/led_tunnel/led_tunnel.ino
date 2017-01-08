@@ -113,7 +113,7 @@ void loop() {
 
   // process current frame
   displayFrame(curFrame);
-  LEDay(frameDuration);
+  delay(frameDuration);
 
   // go to next frame, or restart if completed
   curFrame++;

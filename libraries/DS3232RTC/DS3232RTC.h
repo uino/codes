@@ -33,16 +33,16 @@
  * visit http://creativecommons.org/licenses/by-sa/3.0/ or send a       *
  * letter to Creative Commons, 444 Castro Street, Suite 900,            *
  * Mountain View, CA 94041.                                             *
- *----------------------------------------------------------------------*/ 
+ *----------------------------------------------------------------------*/
 
 #ifndef DS3232RTC_h
 #define DS3232RTC_h
 #include <Time.h>
 
 #if defined(ARDUINO) && ARDUINO >= 100
-#include <Arduino.h> 
+#include <Arduino.h>
 #else
-#include <WProgram.h> 
+#include <WProgram.h>
 #endif
 
 //DS3232 I2C Address

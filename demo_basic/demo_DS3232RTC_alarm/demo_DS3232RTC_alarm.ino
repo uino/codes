@@ -6,7 +6,7 @@
  * The code includes several examples, to be selected below.
  */
 
-#include <DS3232RTC.h> 
+#include <DS3232RTC.h>
 #include <Time.h>
 #include <Wire.h>
 
@@ -21,18 +21,18 @@ const int example = 0;
 // const int example = 2;
 
 void initializeAlarm() {
-  if (example == 0) { 
+  if (example == 0) {
     // alarm every seconds
-    ds3232.setAlarm(ALM1_EVERY_SECOND, 0, 0, 0, 0);  
+    ds3232.setAlarm(ALM1_EVERY_SECOND, 0, 0, 0, 0);
 
   } else if (example == 1) {
     // alarm once per minute when seconds are equal to 14
-    ds3232.setAlarm(ALM1_MATCH_SECONDS, 14, 0, 0, 0);  
+    ds3232.setAlarm(ALM1_MATCH_SECONDS, 14, 0, 0, 0);
 
   } else if (example == 2) {
     // alarm once per minute when seconds are equal to 14, with interrupt
-    ds3232.alarmInterrupt(ALARM_1, true); 
-    ds3232.setAlarm(ALM1_MATCH_SECONDS, 14, 0, 0, 0);  
+    ds3232.alarmInterrupt(ALARM_1, true);
+    ds3232.setAlarm(ALM1_MATCH_SECONDS, 14, 0, 0, 0);
   }
 
   // initialize wave output
@@ -44,7 +44,7 @@ void initializeAlarm() {
 
 
 void printTime(time_t t) {
-  Serial.print(year(t)); 
+  Serial.print(year(t));
   Serial.print('/');
   Serial.print(month(t));
   Serial.print('/');
@@ -55,12 +55,12 @@ void printTime(time_t t) {
   Serial.print(minute(t));
   Serial.print(':');
   Serial.print(second(t));
-  Serial.println(); 
+  Serial.println();
 }
 
 void setup()
 {
-  Serial.begin(9600);   
+  Serial.begin(9600);
   Serial.println("Starting up");
   initializeAlarm();
 }

@@ -1,3 +1,10 @@
+#include <unistd.h>
+#include <sys/time.h>
+
+#include <stdlib.h>
+#include <stdio.h>
+#define byte unsigned char
+
 /**
  * Code for software-correction of the drift of a clock (e.g. the DS3232)
  * (The amount of correction could be read from two EEPROM fields)
@@ -13,6 +20,9 @@
  *
 */
 
+
+#define uint unsigned int
+
 long correction = -4; // subtract one second every 4 seconds, for demo
 
 /*************************************************/
@@ -26,34 +36,84 @@ void correctionToBytes(long n, byte* data) { // data array of 4 bytes
   data[1] = (byte) (n >> 8);
   data[2] = (byte) (n >> 16);
   data[3] = (byte) (n >> 24);
+  // printf("%d %d %d %d\n", (int) data[0], (int) data[1], (int) data[2], (int) data[3]);
 }
+
+void checkConversion(long x) {
+  byte data[4];
+  correctionToBytes(x, data);
+  long y = correctionFromBytes(data);
+  /*
+  Serial.print("Conversion: ");
+  Serial.print(x);
+  Serial.print(" --> ");
+  Serial.println(y);
+  printf("%ld --> %ld\n", x, y);
+  */
+}
+
+void checkConversions() {
+  checkConversion(0);
+  checkConversion(1);
+  checkConversion(-1);
+  checkConversion(800);
+  checkConversion(-800);
+  checkConversion(18000000);
+  checkConversion(-18000000);
+}
+
+
+/*************************************************/
+/* Storing a correction on 3 bytes. */
 
 // use Arduino clock for the demo
 int getSecondsSinceReference() {
-  return millis() / 1000;
+  // return millis() / 1000;
+
+  struct timeval time;
+  double secs = 0;
+  gettimeofday(&time, NULL);
+  return (int) (time.tv_sec);
 }
 
 int nextTimeToCorrect;
 
-void setup() {
-  nextTimeToCorrect = getSecondsSinceReference() + abs(correction);
+long abs(long v) {
+  return (v >= 0) ? v : -v;
 }
 
 int main() {
-  int now = getSecondsSinceReference();
-  Serial.println(now);
+  // checkConversions();
 
-  if (correction != 0 && now >= nextTimeToCorrect) {
-    int delta = (correction > 0) ? 1 : -1;
-    Serial.print("changed time by ");
-    Serial.println(delta);
-    nextTimeToCorrect = now + abs(correction);
+  nextTimeToCorrect = getSecondsSinceReference() + abs(correction);
+
+  while (1) {
+    usleep(200000);
+
+    int now = getSecondsSinceReference();
+    printf("ok %d\n", now);
+
+    if (correction != 0 && now >= nextTimeToCorrect) {
+      int delta = (correction > 0) ? 1 : -1;
+      printf("change time by %d second\n", delta);
+      nextTimeToCorrect = now + abs(correction);
+    }
   }
-
-  sleep(200);
 }
 
 
+/*
+void setup() {
+
+}
+
+void loop() {
+  delay(1000);
+}
+
+
+
+*/
 
 /*************************************************/
 

@@ -16,6 +16,9 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+// EEPROM address // On-board 32k byte EEPROM; 128 pages of 32 bytes each (4096 bytes)
+#define I2C24C32Add 0x57
+
 class AC_DS3232 : public DS3232RTC
 {
 public:
@@ -59,6 +62,64 @@ public:
 
   boolean alarm2() {
     return alarm(ALARM_2);
+  }
+
+  /* EEPROM accesses, adapted from
+     https://forum.hobbycomponents.com/viewtopic.php?f=80&t=1946
+     https://raw.githubusercontent.com/dtu-mekatronik/
+   */
+
+  void EEStartWrite(unsigned int addr) {
+    Wire.beginTransmission(I2C24C32Add);
+    Wire.write((byte)(addr >> 8));
+    Wire.write((byte)(addr & 0xFF));
+  }
+
+  void EEWriteByte(byte data) {
+    Wire.write(data);
+  }
+
+  void EEEndWrite() {
+    Wire.endTransmission();
+  }
+
+  void EEWrite(unsigned int addr, byte data) {
+    EEStartWrite(addr);
+    EEWriteByte(data);
+    EEEndWrite();
+  }
+
+  void EEStartRead(unsigned int addr) {
+    Wire.beginTransmission(I2C24C32Add);
+    Wire.write((byte)(addr >> 8));
+    Wire.write((byte)(addr & 0xFF));
+    Wire.endTransmission();
+  }
+
+  byte EEReadByte() {
+    Wire.requestFrom(I2C24C32Add, 1);
+    if (Wire.available()) {
+      return Wire.read();
+    } else {
+      return 0xFF; // ERROR!
+    }
+  }
+
+  byte EERead(unsigned int addr) {
+    EEStartRead(addr);
+    return EEReadByte();
+  }
+
+  /* Access to the aging register */
+
+  // Offset register is at 0x10
+  // valid values for the input parameter offset ranges from -128 to 127
+  void setAgingOffset(int offset) {
+      if (offset < 0) offset += 256;
+      Wire.beginTransmission(RTC_ADDR); // DS3232 I2C Address is 0x68
+      Wire.write(0x10);
+      Wire.write(offset);
+      Wire.endTransmission();
   }
 
 private:

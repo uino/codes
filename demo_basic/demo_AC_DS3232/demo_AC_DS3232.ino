@@ -13,7 +13,7 @@ const int delayAlarm1 = 5; // seconds
 
 void printTime(time_t t) {
   Serial.print("Date: ");
-  Serial.print(year(t)); 
+  Serial.print(year(t));
   Serial.print('/');
   Serial.print(day(t));
   Serial.print('/');
@@ -24,11 +24,11 @@ void printTime(time_t t) {
   Serial.print(minute(t));
   Serial.print(':');
   Serial.print(second(t));
-  Serial.println(); 
+  Serial.println();
 }
 
 void setup() {
-  Serial.begin(9600);   
+  Serial.begin(9600);
   Serial.println("Starting up");
 
   ds3232.setRelativeAlarm1(delayAlarm1);

@@ -21,7 +21,7 @@ class AC_DS3232 : public DS3232RTC
 public:
 
   /*
-   * Construct a new ds3232 object. 
+   * Construct a new ds3232 object.
    * Inherits all methods from DS3232RTC.
    */
   AC_DS3232() : DS3232RTC() {}
@@ -41,7 +41,7 @@ public:
   }
 
   // warning: precision of alarm2 is to the minute only
-  void setRelativeAlarm2(long nbSecondsFromNow) { 
+  void setRelativeAlarm2(long nbSecondsFromNow) {
     setRelativeAlarm(ALM2_MATCH_DATE, nbSecondsFromNow);
   }
 
@@ -61,9 +61,8 @@ public:
     return alarm(ALARM_2);
   }
 
-
 private:
-  
+
   long nbSecondsIn(int nbDays, int nbHours, int nbMinutes, int nbSeconds) {
     return nbSeconds + 60 * (nbMinutes + 60 * (nbHours + 24 * nbDays));
   }

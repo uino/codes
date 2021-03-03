@@ -1,5 +1,5 @@
 /**
- * Code for setting the time of the DS3232 based on the 
+ * Code for setting the time of the DS3232 based on the
  * computer's time.
  *
  * Code by Arthur Chargueraud.
@@ -10,11 +10,11 @@
  * the file "local_time.h" storing the current unix timestamp,
  * and then compile and upload the present program.
  *
- * For accurate result, set the delayOfCompilationAndUpload 
+ * For accurate result, set the delayOfCompilationAndUpload
  * to the right date (trial-and-error process).
  */
 
-#include <DS3232RTC.h> 
+#include <DS3232RTC.h>
 #include "local_time.h"
 
 // To be adjusted depending on your hardware
@@ -26,7 +26,7 @@ const int timeZoneShift = 1; // hour
 DS3232RTC ds3232;
 
 void printTime(time_t t) {
-  Serial.print(year(t)); 
+  Serial.print(year(t));
   Serial.print('/');
   Serial.print(month(t));
   Serial.print('/');
@@ -37,12 +37,12 @@ void printTime(time_t t) {
   Serial.print(minute(t));
   Serial.print(':');
   Serial.print(second(t));
-  Serial.println(); 
+  Serial.println();
 }
 
 void setup()
 {
-  Serial.begin(9600);   
+  Serial.begin(9600);
   Serial.println("Starting up");
 
   time_t targetTime = CURRENT_TIME + timeZoneShift*3600 + delayOfCompilationAndUpload;

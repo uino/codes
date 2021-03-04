@@ -1,3 +1,5 @@
+// WORK IN PROGRESS
+
 /**
  * Code for software-correction of the drift of a clock (e.g. the DS3232)
  * (The amount of correction could be read from two EEPROM fields)

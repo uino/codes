@@ -1,3 +1,5 @@
+// WORK IN PROGRESS
+
 /**
  * Demo code for reading and writing in the EEPROM of the DS3232
  *

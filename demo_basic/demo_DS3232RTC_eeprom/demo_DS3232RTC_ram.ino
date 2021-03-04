@@ -1,3 +1,6 @@
+// WORK IN PROGRESS
+
+
 /**
  * Demo code for reading and writing in the RAM of the DS3232
  * Valid address range is 0x00 - 0xFF, no checking done by library.
